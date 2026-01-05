@@ -1,0 +1,1014 @@
+<html xmlns="http://www.w3.org/1999/xhtml"><!-- This file was made using: https://archie-adams.github.io/keyboard-shortcut-map-maker/ It can be edited by loading it with the same website. --><head><title>Simulation Key Mapping.html</title><style>/* -------------------------------------------------------------------------- */
+/*                                  site.css                                  */
+/* -------------------------------------------------------------------------- */
+/*                            Author: Archie Adams                            */
+/* -------------------------------------------------------------------------- */
+/*                Styling for the general objects on the site.                */
+/* -------------------------------------------------------------------------- */
+
+/* Header styling.*/
+header {
+  background-color: #b4b3bd;
+  font-size: 48px;
+  font-weight: 500;
+}
+header h1 {
+  margin: 0;
+}
+header h2 {
+  text-align: center;
+}
+
+.ulButtons ul {
+  margin: 0;
+  list-style-type: none; 
+  text-align: center; 
+  background-color: #b4b3bd;
+}
+.ulButtons ul li {
+  display: inline;
+}
+.ulButtons ul li div {
+  padding: 10px 5px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
+.ulButtons ul li label {
+  padding: 10px 5px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  margin:0;
+}
+
+
+/* Main body styling */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffff;
+}
+
+.bodyStyle {
+  width:1109px; 
+  margin:0 auto;
+}
+
+#introduction{
+  margin-bottom: 25px;
+}
+#introduction p {
+  margin-bottom:5px;
+}
+#introduction hr {
+  margin-top:10px;
+  margin-bottom:7px;
+}
+
+/* Footer styling. */
+footer {
+  background-color: #b4b3bd; 
+  margin-top: 20px; 
+  margin-bottom: 0;
+}
+
+footer address {
+  background-color: #b4b3bd; padding-top:20px; padding-bottom:20px;
+}
+
+.footer-div {
+  width:960px;
+  margin:0 auto; 
+  background-color: #b4b3bd;
+}
+
+#to-top-button{
+  margin-left:426px; 
+  padding-top: 14px;
+}
+#to-top-input {
+  width: 110px;
+}
+
+.protectFooter {
+  clear:both;
+}
+
+/* Heading styling. */
+h1 {
+  text-align: center;
+  padding-top: 20px;
+  font-size: 48px;
+  font-weight: 500;
+}
+h2 {
+  font-size: 24px;
+  margin-bottom: 7px;
+}
+h3 {
+  font-size: 20px;
+}
+li span {
+  font-size: 18px;
+}
+ol{
+  list-style-type: none;
+}
+
+/* Font styling. */
+* {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-size: 14px;
+}
+.light {
+  font-weight: 300;
+}
+.regular {
+  font-weight: 400;
+}
+.semibold {
+  font-weight: 600;
+}
+
+.up               { margin-left:20px; }
+.up, .down        { cursor: pointer; }
+.up:after         { content: '△'; }
+.up:hover:after   { content: '▲'; }
+.down:after       { content: '▽'; }
+.down:hover:after { content: '▼'; }
+
+.hidden {
+  display: none;
+}
+
+.sectionDivider {
+  margin-bottom: 15px;
+}</style><style>/* -------------------------------------------------------------------------- */
+/*                                keyboard.css                                */
+/* -------------------------------------------------------------------------- */
+/*                        Original Author: Guido Torres                       */
+/*              (https://github.com/guido732/mechanical-keyboard)             */
+/* -------------------------------------------------------------------------- */
+/*                           Edited by: Archie Adams                          */
+/* -------------------------------------------------------------------------- */
+/*    Adapted version of the CSS originally created by Guido Torres for the   */
+/*                appearance of the mechanical style keyboards.               */
+/* -------------------------------------------------------------------------- */
+
+* {
+  padding: 0;
+  margin: 0;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+.container {
+  background: linear-gradient(165deg, #1d4f71 0%, #122430 100%);
+  font-family: "Baloo 2", cursive;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  margin: 0 auto;
+  height: 100vh;
+  overflow: visible;
+}
+
+.keyboard {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  position: relative;
+  border-radius: 0.5rem;
+  border-top: 0.75rem solid #3d779e;
+  border-right: 0.75rem solid #36698b;
+  border-left: 0.75rem solid #36698b;
+  border-bottom: 0.75rem solid #25485f;
+  width: 1109px;
+  margin:auto;
+  margin-bottom: 30px;
+}
+
+.keyboardBorderStyle {
+  border-radius: 0.5rem;
+  border-top: 0.75rem solid #3d779e;
+  border-right: 0.75rem solid #36698b;
+  border-left: 0.75rem solid #36698b;
+  border-bottom: 0.75rem solid #25485f;
+  margin: auto;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+.SixButtons {
+  width: 822px;
+}
+.FiveButtons {
+  width: 688px;
+}
+.ThreeButtons {
+  width: 421px;
+}
+
+.keyboard::before {
+  content: "";
+  position: absolute;
+  bottom: -1.5rem;
+  left: -0.75rem;
+  width: calc(100% + (1.5rem));
+  height: 2rem;
+  z-index: -1;
+  background-color: #122430;
+  border-bottom-left-radius: 1.2rem;
+  border-bottom-right-radius: 1.2rem;
+  -webkit-box-shadow: 0 1.5rem 2rem 0rem #172635;
+          box-shadow: 0 1.5rem 2rem 0rem #172635;
+}
+
+.keyboard__section {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  background-color: #122430;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.25rem 0 0.25rem;
+}
+
+.keyboard__section:last-child {
+  padding-left: 0;
+}
+.keyboard__section:first-child {
+  padding-right: 0;
+}
+
+.keyboard__section--vertical {
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+}
+
+.keyboard__row {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  width: -webkit-min-content;
+  width: -moz-min-content;
+  width: min-content;
+  margin-bottom: 0.25rem;
+  position: relative;
+}
+
+.keyboard__row--vertical {
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  margin-right: 0.25rem;
+}
+
+.keyboard__row--vertical:last-child {
+  margin-right: 0;
+}
+
+.keyboard__corner {
+  width: 0.25rem;
+  height: 1rem;
+  background: #122430;
+  position: absolute;
+}
+.keyboard__corner--tl {
+  top: 2px;
+  left: 0px;
+  -webkit-transform: rotate(-225deg);
+          transform: rotate(-225deg);
+  -webkit-transform-origin: 50% 0%;
+          transform-origin: 50% 0%;
+}
+.keyboard__corner--tr {
+  top: 2px;
+  right: 0px;
+  -webkit-transform: rotate(-135deg);
+          transform: rotate(-135deg);
+  -webkit-transform-origin: 50% 0%;
+          transform-origin: 50% 0%;
+}
+.keyboard__corner--bl {
+  bottom: 2px;
+  left: 0px;
+  -webkit-transform: rotate(-135deg);
+          transform: rotate(-135deg);
+  -webkit-transform-origin: 50% 100%;
+          transform-origin: 50% 100%;
+}
+.keyboard__corner--br {
+  bottom: 2px;
+  right: 0px;
+  -webkit-transform: rotate(135deg);
+          transform: rotate(135deg);
+  -webkit-transform-origin: 50% 100%;
+          transform-origin: 50% 100%;
+}
+
+.keyboard.large .keyboard-short-only {
+  display: none;
+}
+
+.colourkey, .menukey, .key {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-flow: column;
+          flex-flow: column;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  margin-right: 0.25rem;
+  padding: 0.15rem 0.1rem;
+  color: #06112e; /* Default key text colour */
+  font-size: 0.7rem;
+  font-weight: 500;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  background: -webkit-gradient(linear, left top, right top, from(#e1e1e1), color-stop(30%, #f0f0f0), color-stop(60%, #f0f0f0), to(#e6e6e6));
+  background: linear-gradient(90deg, #e1e1e1 0%, #f0f0f0 30%, #f0f0f0 60%, #e6e6e6);
+  border-radius: 0.3125rem 0.3125rem 0.5rem 0.5rem;
+  border-top: 0.15rem solid #d7d7d7;
+  border-right: 0.35rem solid gainsboro;
+  border-left: 0.35rem solid gainsboro;
+  border-bottom: 0.6rem solid #cfcfcf;
+  -webkit-box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #f3f3f3;
+          box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #f3f3f3;
+}
+.userText {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.key:last-child, .menukey:last-child, .colourkey:last-child {
+  margin-right: 0;
+}
+
+.key--2 {
+  width: 5.0625rem;
+}
+.key--3 {
+  width: 6.125rem;
+}
+.key--4 {
+  width: 7.1875rem;
+}
+.key--5 {
+  width: 8.25rem;
+}
+.key--6 {
+  width: 9.3125rem;
+}
+.key--7 {
+  width: 11.4375rem;
+  margin-right: 0;
+}
+.key--8 {
+  width: 26.3125rem;
+}
+
+.key--vert {
+  margin-bottom: 0.25rem;
+  margin-right: 0;
+}
+.key--vert:last-child {
+  margin-bottom: 0;
+}
+.key--vert.key--5 {
+  width: 4rem;
+  height: 8.25rem;
+}
+
+.key--pressed {
+  -webkit-transform: translateY(0.2rem);
+          transform: translateY(0.2rem);
+  -webkit-transition: -webkit-transform 0.05s;
+  transition: -webkit-transform 0.05s;
+  transition: transform 0.05s;
+  transition: transform 0.05s, -webkit-transform 0.05s;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-end {
+  text-align: end;
+}
+
+.vert-center {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+
+.text-lg {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.hidden {
+  visibility:hidden;
+}</style><style>/* -------------------------------------------------------------------------- */
+/*                                key-colours.css                             */
+/* -------------------------------------------------------------------------- */
+/*                        Original Author: Guido Torres                       */
+/*              (https://github.com/guido732/mechanical-keyboard)             */
+/* -------------------------------------------------------------------------- */
+/*                           Edited by: Archie Adams                          */
+/* -------------------------------------------------------------------------- */
+/*          A selection classes which will change the colour of keys.         */
+/* -------------------------------------------------------------------------- */
+
+.key--colour--coral {
+  color: #f0f0f0;
+  background: -webkit-gradient(linear, left top, right top, from(#e97b67), color-stop(30%, #ed9282), color-stop(60%, #ed9282), to(#ea8270));
+  background: linear-gradient(90deg, #e97b67 0%, #ed9282 30%, #ed9282 60%, #ea8270);
+  border-radius: 0.3125rem 0.3125rem 0.5rem 0.5rem;
+  border-top: 0.15rem solid #e76b55;
+  border-right: 0.35rem solid #e8735e;
+  border-left: 0.35rem solid #e8735e;
+  border-bottom: 0.6rem solid #da6753;
+  -webkit-box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #ee9686;
+          box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #ee9686;
+}
+
+.key--colour--navy {
+  color: #f0f0f0;
+  background: -webkit-gradient(linear, left top, right top, from(#264a63), color-stop(30%, #2f5b79), color-stop(60%, #2f5b79), to(#29506a));
+  background: linear-gradient(90deg, #264a63 0%, #2f5b79 30%, #2f5b79 60%, #29506a);
+  border-radius: 0.3125rem 0.3125rem 0.5rem 0.5rem;
+  border-top: 0.15rem solid #213f54;
+  border-right: 0.35rem solid #24455c;
+  border-left: 0.35rem solid #24455c;
+  border-bottom: 0.6rem solid #223644;
+  -webkit-box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #305e7d;
+          box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #305e7d;
+}
+
+.key--colour--green {
+  color: #eae7e1;
+  background: -webkit-gradient(linear, left top, right top, from(#237465), color-stop(30%, #2a8c79), color-stop(60%, #2a8c79), to(#257c6b));
+  background: linear-gradient(90deg, #237465 0%, #2a8c79 30%, #2a8c79 60%, #257c6b);
+  border-radius: 0.3125rem 0.3125rem 0.5rem 0.5rem;
+  border-top: 0.15rem solid #1e6557;
+  border-right: 0.35rem solid #216d5e;
+  border-left: 0.35rem solid #216d5e;
+  border-bottom: 0.6rem solid #205349;
+  -webkit-box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #2b907c;
+          box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #2b907c;
+}
+
+.key--colour--orange {
+  color: #f7f6f4;
+  background: -webkit-gradient(linear, left top, right top, from(#f35b24), color-stop(30%, #f57141), color-stop(60%, #f57141), to(#f4632e));
+  background: linear-gradient(90deg, #f35b24 0%, #f57141 30%, #f57141 60%, #f4632e);
+  border-radius: 0.3125rem 0.3125rem 0.5rem 0.5rem;
+  border-top: 0.15rem solid #f24d11;
+  border-right: 0.35rem solid #f3541a;
+  border-left: 0.35rem solid #f3541a;
+  border-bottom: 0.6rem solid #db4c18;
+  -webkit-box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #f57546;
+          box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #f57546;
+}
+
+.key--colour--blue {
+  color: #f7f6f4;
+  background: -webkit-gradient(linear, left top, right top, from(#2c9ce5), color-stop(30%, #47a9e8), color-stop(60%, #47a9e8), to(#35a1e6));
+  background: linear-gradient(90deg, #2c9ce5 0%, #47a9e8 30%, #47a9e8 60%, #35a1e6);
+  border-radius: 0.3125rem 0.3125rem 0.5rem 0.5rem;
+  border-top: 0.15rem solid #1c93e0;
+  border-right: 0.35rem solid #2398e3;
+  border-left: 0.35rem solid #2398e3;
+  border-bottom: 0.6rem solid #2688c7;
+  -webkit-box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #4cabe9;
+          box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #4cabe9;
+}
+
+.key--disabled {
+  color: #f7f6f4;
+  background: -webkit-gradient(linear, left top, right top, from(#9ca8b1), color-stop(30%, #94a4ad), color-stop(60%, #94a4ad), to(#9ca8b1));
+  background: linear-gradient(90deg, #94a4ad 0%, #94a4ad 30%, #94a4ad 60%, #94a4ad);
+  border-radius: 0.3125rem 0.3125rem 0.5rem 0.5rem;
+  border-top: 0.15rem solid #94a4ad;
+  border-right: 0.35rem solid #81868a;
+  border-left: 0.35rem solid #81868a;
+  border-bottom: 0.6rem solid #81868a;
+  -webkit-box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #94a4ad;
+          box-shadow: 0.25rem 0.25rem 1rem 0rem rgba(23, 38, 53, 0.5), inset -1px -1px 5px 0 #94a4ad;
+}</style></head><header><h1 id="top">Keyboard Shortcut Map Maker</h1><h2 id="loadedFileHeader" class="editable">Simulation Key Mapping.html</h2><div style=" padding-top: 1px;"></div></header><body><div style=" margin-top: 30px;" class="top-padding-50px"></div><div class="bodyStyle"><ol id="KeyboardTable"><li>
+      <span class="up hidden"></span>
+      <span class="down hidden"></span>
+      <h3 style="float: left;" class="editable">Standard Xbox</h3>
+      <p style="float: right; font-size: 18px;" onclick="removeKeyboard($(this.parentNode));" class="hidden">🚮</p>
+      <div id="kbd1766897064648" class="keyboard large">
+
+        <div class="keyboard__corner keyboard__corner--bl"></div>
+        <div class="keyboard__corner keyboard__corner--tl"></div>
+        <div class="keyboard__corner keyboard__corner--tr"></div>
+        <div class="keyboard__corner keyboard__corner--br"></div>
+
+        <div class="keyboard__section">
+
+          <div class="keyboard__row keyboard__row--lg keyboard-long-only">
+            <div data-key="Escape" class="key">ESC<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key hidden"><span class="userText"></span></div>
+            <div data-key="F1" class="key">F1<span class="userText"></span></div>
+            <div data-key="F2" class="key">F2<span class="userText"></span></div>
+            <div data-key="F3" class="key">F3<span class="userText"></span></div>
+            <div data-key="F4" class="key" style="margin-right: 31px;">F4<span class="userText"></span>
+            </div>
+            <div data-key="F5" class="key">F5<span class="userText"></span></div>
+            <div data-key="F6" class="key">F6<span class="userText"></span></div>
+            <div data-key="F7" class="key">F7<span class="userText"></span></div>
+            <div data-key="F8" class="key">F8<span class="userText"></span></div>
+            <div data-key="F9" class="key" style="margin-left: 32px;">F9<span class="userText"></span></div>
+            <div data-key="F10" class="key">F10<span class="userText"></span></div>
+            <div data-key="F11" class="key">F11<span class="userText"></span></div>
+            <div data-key="F12" class="key">F12<span class="userText"></span></div>
+          </div>
+
+          <!-- SPACER DIV FOR 10keyless  -->
+          <div class="keyboard__row keyboard__row--lg" style="height:5px">
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="Escape" class="key keyboard-short-only">ESC<span class="userText"></span></div>
+            <div data-key="Backquote" class="key key--primary keyboard-long-only">`<span class="userText"></span>
+            </div>
+            <div data-key="Digit1" class="key">1<span class="userText"></span></div>
+            <div data-key="Digit2" class="key">2<span class="userText"></span></div>
+            <div data-key="Digit3" class="key">3<span class="userText"></span></div>
+            <div data-key="Digit4" class="key">4<span class="userText"></span></div>
+            <div data-key="Digit5" class="key">5<span class="userText"></span></div>
+            <div data-key="Digit6" class="key">6<span class="userText"></span></div>
+            <div data-key="Digit7" class="key">7<span class="userText"></span></div>
+            <div data-key="Digit8" class="key">8<span class="userText"></span>
+            </div>
+            <div data-key="Digit9" class="key">9<span class="userText"></span></div>
+            <div data-key="Digit0" class="key">0<span class="userText"></span></div>
+            <div data-key="Minus" class="key">-<span class="userText"></span></div>
+            <div data-key="Equal" class="key">=<span class="userText"></span></div>
+            <div data-key="Backspace" class="key text-end key--5">BACKSPACE<span class="userText"></span>
+            </div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="Tab" class="key key--3">TAB<span class="userText"></span></div>
+            <div data-key="KeyQ" class="key key--colour--green">Q<span class="userText">Left Trigger</span></div>
+            <div data-key="KeyW" class="key key--colour--blue">W<span class="userText">LStick Up</span></div>
+            <div data-key="KeyE" class="key key--colour--green">E<span class="userText">Left Bumper</span></div>
+            <div data-key="KeyR" class="key key--colour--navy">R<span class="userText">Back Button</span></div>
+            <div data-key="KeyT" class="key">T<span class="userText"></span></div>
+            <div data-key="KeyY" class="key key--colour--navy">Y<span class="userText">Start Button</span></div>
+            <div data-key="KeyU" class="key key--colour--green">U<span class="userText">Right Bumper</span></div>
+            <div data-key="KeyI" class="key key--colour--coral">I<span class="userText">Y Button</span></div>
+            <div data-key="KeyO" class="key key--colour--green">O<span class="userText">Right Trigger</span></div>
+            <div data-key="KeyP" class="key">P<span class="userText"></span></div>
+            <div data-key="BracketLeft" class="key">[ {<span class="userText"></span></div>
+            <div data-key="BracketRight" class="key">] }<span class="userText"></span></div>
+            <div data-key="Backslash" class="key text-center key--3">\ |<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="CapsLock" class="key key--4">CAPSLOCK<span class="userText"></span></div>
+            <div data-key="KeyA" class="key key--colour--blue">A<span class="userText">LStick Left</span></div>
+            <div data-key="KeyS" class="key key--colour--blue">S<span class="userText">LStick Down</span></div>
+            <div data-key="KeyD" class="key key--colour--blue">D<span class="userText">LRight Right</span></div>
+            <div data-key="KeyF" class="key key--colour--navy">F<span class="userText">LStick Click</span></div>
+            <div data-key="KeyG" class="key">G<span class="userText"></span></div>
+            <div data-key="KeyH" class="key key--colour--navy">H<span class="userText">RStick Click</span></div>
+            <div data-key="KeyJ" class="key key--colour--coral">J<span class="userText">X Button</span></div>
+            <div data-key="KeyK" class="key key--colour--coral">K<span class="userText">A Button</span></div>
+            <div data-key="KeyL" class="key key--colour--coral">L<span class="userText">B Button</span></div>
+            <div data-key="Semicolon" class="key">; :<span class="userText"></span></div>
+            <div data-key="Quote" class="key">' "<span class="userText"></span></div>
+            <div data-key="Enter" class="key text-end key--6">ENTER<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="ShiftLeft" class="key key--6">SHIFT<span class="userText"></span></div>
+            <div data-key="KeyZ" class="key key--colour--orange">Z<span class="userText">POV Up</span></div>
+            <div data-key="KeyX" class="key key--colour--orange">X<span class="userText">POV Down</span></div>
+            <div data-key="KeyC" class="key key--colour--orange">C<span class="userText">POV Left</span></div>
+            <div data-key="KeyV" class="key key--colour--orange">V<span class="userText">POV Right</span></div>
+            <div data-key="KeyB" class="key">B<span class="userText"></span></div>
+            <div data-key="KeyN" class="key">N<span class="userText"></span></div>
+            <div data-key="KeyM" class="key">M<span class="userText"></span></div>
+            <div data-key="Comma" class="key">, &lt;<span class="userText"></span></div>
+            <div data-key="Period" class="key">. &gt;<span class="userText"></span></div>
+            <div data-key="Slash" class="key">/ ?<span class="userText"></span></div>
+            <div data-key="ShiftRight" class="key text-end key--7">SHIFT<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="ControlLeft" class="key text-center key--2">CTRL<span class="userText"></span>
+            </div>
+            <div data-key="OSLeft" class="key text-center key--2">WIN<span class="userText"></span>
+            </div>
+            <div data-key="AltLeft" class="key text-center key--2">ALT<span class="userText"></span></div>
+            <div data-key="Space" class="key key--8"><span class="userText"></span></div>
+            <div data-key="AltRight" class="key text-center key--2">ALT<span class="userText"></span></div>
+            <div data-key="Function" class="key text-center key--2">FN<span class="userText"></span></div>
+            <div data-key="ContextMenu" class="key text-center last key--2">MENU<span class="userText"></span>
+            </div>
+            <div data-key="ControlRight" class="key text-center key--2">CTRL<span class="userText"></span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- This is the numpad and right arrow section. -->
+        <div class="keyboard__section keyboard__section--vertical">
+
+          <!-- Vertical spacer column. -->
+          <div class="keyboard__row keyboard__row--vertical" style="width:8px">
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical">
+            <div data-key="PrintScreen" class="key key--vert" style="margin-bottom: 12px;">
+              PRTSC<span class="userText"></span></div>
+            <div data-key="Insert" class="key key--vert">INS<span class="userText"></span></div>
+            <div data-key="Delete" class="key key--vert">DEL<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key vert-center key--vert key--5 hidden"><span class="userText"></span>
+            </div>
+            <div data-key="ArrowLeft" class="key key--vert key--colour--blue">◁<span class="userText">RStick Left</span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical">
+            <div data-key="ScrollLock" class="key key--vert" style="margin-bottom: 12px;">
+              SCRLK<span class="userText"></span></div>
+            <div data-key="Home" class="key key--vert">HOME<span class="userText"></span></div>
+            <div data-key="End" class="key key--vert">END<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key key--vert hidden"><span class="userText"></span></div>
+            <div data-key="Numpad3" class="key key--vert key--colour--blue">△<span class="userText">RStick Up</span></div>
+            <div data-key="ArrowUp" class="key key--vert key--colour--blue">▽<span class="userText">RStick Down</span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical" style="padding-right: 3px;">
+            <div data-key="Pause" class="key key--vert" style="margin-bottom: 12px;">PAUSE<span class="userText"></span>
+            </div>
+            <div data-key="PageUp" class="key key--vert">PGUP<span class="userText"></span></div>
+            <div data-key="PageDown" class="key key--vert">PGDN<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key vert-center key--vert key--5 hidden"><span class="userText"></span>
+            </div>
+            <div data-key="ArrowRight" class="key key--vert key--colour--blue">▷<span class="userText">RStick Right</span></div>
+          </div>
+        </div>
+
+      </div> <!-- End of keyboard. -->
+    </li><li>
+      <span class="up hidden"></span>
+      <span class="down hidden"></span>
+      <h3 style="float: left;" class="editable">Razer Wolverine</h3>
+      <p style="float: right; font-size: 18px;" onclick="removeKeyboard($(this.parentNode));" class="hidden">🚮</p>
+      <div id="kbd1766896214340" class="keyboard large">
+
+        <div class="keyboard__corner keyboard__corner--bl"></div>
+        <div class="keyboard__corner keyboard__corner--tl"></div>
+        <div class="keyboard__corner keyboard__corner--tr"></div>
+        <div class="keyboard__corner keyboard__corner--br"></div>
+
+        <div class="keyboard__section">
+
+          <div class="keyboard__row keyboard__row--lg keyboard-long-only">
+            <div data-key="Escape" class="key">ESC<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key hidden"><span class="userText"></span></div>
+            <div data-key="F1" class="key">F1<span class="userText"></span></div>
+            <div data-key="F2" class="key">F2<span class="userText"></span></div>
+            <div data-key="F3" class="key">F3<span class="userText"></span></div>
+            <div data-key="F4" class="key" style="margin-right: 31px;">F4<span class="userText"></span>
+            </div>
+            <div data-key="F5" class="key">F5<span class="userText"></span></div>
+            <div data-key="F6" class="key">F6<span class="userText"></span></div>
+            <div data-key="F7" class="key">F7<span class="userText"></span></div>
+            <div data-key="F8" class="key">F8<span class="userText"></span></div>
+            <div data-key="F9" class="key" style="margin-left: 32px;">F9<span class="userText"></span></div>
+            <div data-key="F10" class="key">F10<span class="userText"></span></div>
+            <div data-key="F11" class="key">F11<span class="userText"></span></div>
+            <div data-key="F12" class="key">F12<span class="userText"></span></div>
+          </div>
+
+          <!-- SPACER DIV FOR 10keyless  -->
+          <div class="keyboard__row keyboard__row--lg" style="height:5px">
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="Escape" class="key keyboard-short-only">ESC<span class="userText"></span></div>
+            <div data-key="Backquote" class="key key--primary keyboard-long-only">`<span class="userText"></span>
+            </div>
+            <div data-key="Digit1" class="key">1<span class="userText"></span></div>
+            <div data-key="Digit2" class="key">2<span class="userText"></span></div>
+            <div data-key="Digit3" class="key">3<span class="userText"></span></div>
+            <div data-key="Digit4" class="key">4<span class="userText"></span></div>
+            <div data-key="Digit5" class="key">5<span class="userText"></span></div>
+            <div data-key="Digit6" class="key">6<span class="userText"></span></div>
+            <div data-key="Digit7" class="key">7<span class="userText"></span></div>
+            <div data-key="Digit8" class="key">8<span class="userText"></span>
+            </div>
+            <div data-key="Digit9" class="key">9<span class="userText"></span></div>
+            <div data-key="Digit0" class="key">0<span class="userText"></span></div>
+            <div data-key="Minus" class="key">-<span class="userText"></span></div>
+            <div data-key="Equal" class="key">=<span class="userText"></span></div>
+            <div data-key="Backspace" class="key text-end key--5">BACKSPACE<span class="userText"></span>
+            </div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="Tab" class="key key--3">TAB<span class="userText"></span></div>
+            <div data-key="KeyQ" class="key key--colour--green">Q<span class="userText">Left Trigger</span></div>
+            <div data-key="KeyW" class="key key--colour--blue">W<span class="userText">LStick Up</span></div>
+            <div data-key="KeyE" class="key key--colour--green">E<span class="userText">Left Bumper</span></div>
+            <div data-key="KeyR" class="key key--colour--green">R<span class="userText">Left Claw</span></div>
+            <div data-key="KeyT" class="key">T<span class="userText"></span></div>
+            <div data-key="KeyY" class="key key--colour--green">Y<span class="userText">Right Claw</span></div>
+            <div data-key="KeyU" class="key key--colour--green">U<span class="userText">Right Bumper</span></div>
+            <div data-key="KeyI" class="key key--colour--coral">I<span class="userText">Y Button</span></div>
+            <div data-key="KeyO" class="key key--colour--green">O<span class="userText">Right Trigger</span></div>
+            <div data-key="KeyP" class="key">P<span class="userText"></span></div>
+            <div data-key="BracketLeft" class="key">[ {<span class="userText"></span></div>
+            <div data-key="BracketRight" class="key">] }<span class="userText"></span></div>
+            <div data-key="Backslash" class="key text-center key--3">\ |<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="CapsLock" class="key key--4">CAPSLOCK<span class="userText"></span></div>
+            <div data-key="KeyA" class="key key--colour--blue">A<span class="userText">LStick Left</span></div>
+            <div data-key="KeyS" class="key key--colour--blue">S<span class="userText">LStick Down</span></div>
+            <div data-key="KeyD" class="key key--colour--blue">D<span class="userText">LStick Right</span></div>
+            <div data-key="KeyF" class="key key--colour--navy">F<span class="userText">LStick Click</span></div>
+            <div data-key="KeyG" class="key">G<span class="userText"></span></div>
+            <div data-key="KeyH" class="key key--colour--navy">H<span class="userText">RStick Click</span></div>
+            <div data-key="KeyJ" class="key key--colour--coral">J<span class="userText">X Button</span></div>
+            <div data-key="KeyK" class="key key--colour--coral">K<span class="userText">A Button</span></div>
+            <div data-key="KeyL" class="key key--colour--coral">L<span class="userText">B Button</span></div>
+            <div data-key="Semicolon" class="key">; :<span class="userText"></span></div>
+            <div data-key="Quote" class="key">' "<span class="userText"></span></div>
+            <div data-key="Enter" class="key text-end key--6">ENTER<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="ShiftLeft" class="key key--6">SHIFT<span class="userText"></span></div>
+            <div data-key="KeyZ" class="key key--colour--orange">Z<span class="userText">Upper Left Paddle</span></div>
+            <div data-key="KeyX" class="key key--colour--orange">X<span class="userText">Lower Left Paddle</span></div>
+            <div data-key="KeyC" class="key key--colour--orange">C<span class="userText">Upper Right Paddle</span></div>
+            <div data-key="KeyV" class="key key--colour--orange">V<span class="userText">Lower Right Paddle</span></div>
+            <div data-key="KeyB" class="key">B<span class="userText"></span></div>
+            <div data-key="KeyN" class="key">N<span class="userText"></span></div>
+            <div data-key="KeyM" class="key">M<span class="userText"></span></div>
+            <div data-key="Comma" class="key">, &lt;<span class="userText"></span></div>
+            <div data-key="Period" class="key">. &gt;<span class="userText"></span></div>
+            <div data-key="Slash" class="key">/ ?<span class="userText"></span></div>
+            <div data-key="ShiftRight" class="key text-end key--7">SHIFT<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="ControlLeft" class="key text-center key--2">CTRL<span class="userText"></span>
+            </div>
+            <div data-key="OSLeft" class="key text-center key--2">WIN<span class="userText"></span>
+            </div>
+            <div data-key="AltLeft" class="key text-center key--2">ALT<span class="userText"></span></div>
+            <div data-key="Space" class="key key--8"><span class="userText"></span></div>
+            <div data-key="AltRight" class="key text-center key--2">ALT<span class="userText"></span></div>
+            <div data-key="Function" class="key text-center key--2">FN<span class="userText"></span></div>
+            <div data-key="ContextMenu" class="key text-center last key--2">MENU<span class="userText"></span>
+            </div>
+            <div data-key="ControlRight" class="key text-center key--2">CTRL<span class="userText"></span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- This is the numpad and right arrow section. -->
+        <div class="keyboard__section keyboard__section--vertical">
+
+          <!-- Vertical spacer column. -->
+          <div class="keyboard__row keyboard__row--vertical" style="width:8px">
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical">
+            <div data-key="PrintScreen" class="key key--vert" style="margin-bottom: 12px;">
+              PRTSC<span class="userText"></span></div>
+            <div data-key="Insert" class="key key--vert">INS<span class="userText"></span></div>
+            <div data-key="Delete" class="key key--vert">DEL<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key vert-center key--vert key--5 hidden"><span class="userText"></span>
+            </div>
+            <div data-key="ArrowLeft" class="key key--vert key--colour--blue">◁<span class="userText">RStick Left</span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical">
+            <div data-key="ScrollLock" class="key key--vert" style="margin-bottom: 12px;">
+              SCRLK<span class="userText"></span></div>
+            <div data-key="Home" class="key key--vert">HOME<span class="userText"></span></div>
+            <div data-key="End" class="key key--vert">END<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key key--vert hidden"><span class="userText"></span></div>
+            <div data-key="Numpad3" class="key key--vert key--colour--blue">△<span class="userText">RStick Up</span></div>
+            <div data-key="ArrowUp" class="key key--vert key--colour--blue">▽<span class="userText">RStick Down</span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical" style="padding-right: 3px;">
+            <div data-key="Pause" class="key key--vert" style="margin-bottom: 12px;">PAUSE<span class="userText"></span>
+            </div>
+            <div data-key="PageUp" class="key key--vert">PGUP<span class="userText"></span></div>
+            <div data-key="PageDown" class="key key--vert">PGDN<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key vert-center key--vert key--5 hidden"><span class="userText"></span>
+            </div>
+            <div data-key="ArrowRight" class="key key--vert key--colour--blue">▷<span class="userText">RStick Right</span></div>
+          </div>
+        </div>
+
+      </div> <!-- End of keyboard. -->
+    </li><li>
+      <span class="up hidden"></span>
+      <span class="down hidden"></span>
+      <h3 style="float: left;" class="editable">Operator Console</h3>
+      <p style="float: right; font-size: 18px;" onclick="removeKeyboard($(this.parentNode));" class="hidden">🚮</p>
+      <div id="kbd1766897195909" class="keyboard large">
+
+        <div class="keyboard__corner keyboard__corner--bl"></div>
+        <div class="keyboard__corner keyboard__corner--tl"></div>
+        <div class="keyboard__corner keyboard__corner--tr"></div>
+        <div class="keyboard__corner keyboard__corner--br"></div>
+
+        <div class="keyboard__section">
+
+          <div class="keyboard__row keyboard__row--lg keyboard-long-only">
+            <div data-key="Escape" class="key">ESC<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key hidden"><span class="userText"></span></div>
+            <div data-key="F1" class="key">F1<span class="userText"></span></div>
+            <div data-key="F2" class="key">F2<span class="userText"></span></div>
+            <div data-key="F3" class="key">F3<span class="userText"></span></div>
+            <div data-key="F4" class="key" style="margin-right: 31px;">F4<span class="userText"></span>
+            </div>
+            <div data-key="F5" class="key">F5<span class="userText"></span></div>
+            <div data-key="F6" class="key">F6<span class="userText"></span></div>
+            <div data-key="F7" class="key">F7<span class="userText"></span></div>
+            <div data-key="F8" class="key">F8<span class="userText"></span></div>
+            <div data-key="F9" class="key" style="margin-left: 32px;">F9<span class="userText"></span></div>
+            <div data-key="F10" class="key">F10<span class="userText"></span></div>
+            <div data-key="F11" class="key">F11<span class="userText"></span></div>
+            <div data-key="F12" class="key">F12<span class="userText"></span></div>
+          </div>
+
+          <!-- SPACER DIV FOR 10keyless  -->
+          <div class="keyboard__row keyboard__row--lg" style="height:5px">
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="Escape" class="key keyboard-short-only">ESC<span class="userText"></span></div>
+            <div data-key="Backquote" class="key key--primary keyboard-long-only">`<span class="userText"></span>
+            </div>
+            <div data-key="Digit1" class="key key--colour--blue">1<span class="userText">Driver Switch</span></div>
+            <div data-key="Digit2" class="key key--colour--blue">2<span class="userText">Driver Switch</span></div>
+            <div data-key="Digit3" class="key key--colour--blue">3<span class="userText">Driver Switch</span></div>
+            <div data-key="Digit4" class="key key--colour--navy">4<span class="userText">Driver Left</span></div>
+            <div data-key="Digit5" class="key key--colour--navy">5<span class="userText">Driver Right</span></div>
+            <div data-key="Digit6" class="key key--colour--green">6<span class="userText">Operator Switch</span></div>
+            <div data-key="Digit7" class="key key--colour--green">7<span class="userText">Operator Switch</span></div>
+            <div data-key="Digit8" class="key key--colour--green">8<span class="userText">Operator Switch</span>
+            </div>
+            <div data-key="Digit9" class="key key--colour--green">9<span class="userText">Operator Switch</span></div>
+            <div data-key="Digit0" class="key key--colour--green">0<span class="userText">Operator Switch</span></div>
+            <div data-key="Minus" class="key">-<span class="userText"></span></div>
+            <div data-key="Equal" class="key">=<span class="userText"></span></div>
+            <div data-key="Backspace" class="key text-end key--5">BACKSPACE<span class="userText"></span>
+            </div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="Tab" class="key key--3">TAB<span class="userText"></span></div>
+            <div data-key="KeyQ" class="key">Q<span class="userText"></span></div>
+            <div data-key="KeyW" class="key">W<span class="userText"></span></div>
+            <div data-key="KeyE" class="key">E<span class="userText"></span></div>
+            <div data-key="KeyR" class="key">R<span class="userText"></span></div>
+            <div data-key="KeyT" class="key">T<span class="userText"></span></div>
+            <div data-key="KeyY" class="key">Y<span class="userText"></span></div>
+            <div data-key="KeyU" class="key">U<span class="userText"></span></div>
+            <div data-key="KeyI" class="key">I<span class="userText"></span></div>
+            <div data-key="KeyO" class="key">O<span class="userText"></span></div>
+            <div data-key="KeyP" class="key">P<span class="userText"></span></div>
+            <div data-key="BracketLeft" class="key">[ {<span class="userText"></span></div>
+            <div data-key="BracketRight" class="key">] }<span class="userText"></span></div>
+            <div data-key="Backslash" class="key text-center key--3">\ |<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="CapsLock" class="key key--4">CAPSLOCK<span class="userText"></span></div>
+            <div data-key="KeyA" class="key">A<span class="userText"></span></div>
+            <div data-key="KeyS" class="key">S<span class="userText"></span></div>
+            <div data-key="KeyD" class="key">D<span class="userText"></span></div>
+            <div data-key="KeyF" class="key">F<span class="userText"></span></div>
+            <div data-key="KeyG" class="key">G<span class="userText"></span></div>
+            <div data-key="KeyH" class="key">H<span class="userText"></span></div>
+            <div data-key="KeyJ" class="key">J<span class="userText"></span></div>
+            <div data-key="KeyK" class="key">K<span class="userText"></span></div>
+            <div data-key="KeyL" class="key">L<span class="userText"></span></div>
+            <div data-key="Semicolon" class="key">; :<span class="userText"></span></div>
+            <div data-key="Quote" class="key">' "<span class="userText"></span></div>
+            <div data-key="Enter" class="key text-end key--6">ENTER<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="ShiftLeft" class="key key--6">SHIFT<span class="userText"></span></div>
+            <div data-key="KeyZ" class="key">Z<span class="userText"></span></div>
+            <div data-key="KeyX" class="key">X<span class="userText"></span></div>
+            <div data-key="KeyC" class="key">C<span class="userText"></span></div>
+            <div data-key="KeyV" class="key">V<span class="userText"></span></div>
+            <div data-key="KeyB" class="key">B<span class="userText"></span></div>
+            <div data-key="KeyN" class="key">N<span class="userText"></span></div>
+            <div data-key="KeyM" class="key">M<span class="userText"></span></div>
+            <div data-key="Comma" class="key">, &lt;<span class="userText"></span></div>
+            <div data-key="Period" class="key">. &gt;<span class="userText"></span></div>
+            <div data-key="Slash" class="key">/ ?<span class="userText"></span></div>
+            <div data-key="ShiftRight" class="key text-end key--7">SHIFT<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--lg">
+            <div data-key="ControlLeft" class="key text-center key--2">CTRL<span class="userText"></span>
+            </div>
+            <div data-key="OSLeft" class="key text-center key--2">WIN<span class="userText"></span>
+            </div>
+            <div data-key="AltLeft" class="key text-center key--2">ALT<span class="userText"></span></div>
+            <div data-key="Space" class="key key--8"><span class="userText"></span></div>
+            <div data-key="AltRight" class="key text-center key--2">ALT<span class="userText"></span></div>
+            <div data-key="Function" class="key text-center key--2">FN<span class="userText"></span></div>
+            <div data-key="ContextMenu" class="key text-center last key--2">MENU<span class="userText"></span>
+            </div>
+            <div data-key="ControlRight" class="key text-center key--2">CTRL<span class="userText"></span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- This is the numpad and right arrow section. -->
+        <div class="keyboard__section keyboard__section--vertical">
+
+          <!-- Vertical spacer column. -->
+          <div class="keyboard__row keyboard__row--vertical" style="width:8px">
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical">
+            <div data-key="PrintScreen" class="key key--vert" style="margin-bottom: 12px;">
+              PRTSC<span class="userText"></span></div>
+            <div data-key="Insert" class="key key--vert">INS<span class="userText"></span></div>
+            <div data-key="Delete" class="key key--vert">DEL<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key vert-center key--vert key--5 hidden"><span class="userText"></span>
+            </div>
+            <div data-key="ArrowLeft" class="key key--vert">◁<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical">
+            <div data-key="ScrollLock" class="key key--vert" style="margin-bottom: 12px;">
+              SCRLK<span class="userText"></span></div>
+            <div data-key="Home" class="key key--vert">HOME<span class="userText"></span></div>
+            <div data-key="End" class="key key--vert">END<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key key--vert hidden"><span class="userText"></span></div>
+            <div data-key="Numpad3" class="key key--vert">△<span class="userText"></span></div>
+            <div data-key="ArrowUp" class="key key--vert">▽<span class="userText"></span></div>
+          </div>
+
+          <div class="keyboard__row keyboard__row--vertical" style="padding-right: 3px;">
+            <div data-key="Pause" class="key key--vert" style="margin-bottom: 12px;">PAUSE<span class="userText"></span>
+            </div>
+            <div data-key="PageUp" class="key key--vert">PGUP<span class="userText"></span></div>
+            <div data-key="PageDown" class="key key--vert">PGDN<span class="userText"></span></div>
+            <div data-key="HIDDEN" class="key vert-center key--vert key--5 hidden"><span class="userText"></span>
+            </div>
+            <div data-key="ArrowRight" class="key key--vert">▷<span class="userText"></span></div>
+          </div>
+        </div>
+
+      </div> <!-- End of keyboard. -->
+    </li></ol></div></body></html>
