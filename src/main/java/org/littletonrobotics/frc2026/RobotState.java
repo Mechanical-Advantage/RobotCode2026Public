@@ -161,7 +161,7 @@ public class RobotState {
     }
 
     // Calculate the transform from the shifted estimate to the observation pose
-    Transform2d transform = new Transform2d(estimateAtTime, observation.visionPose());
+    Transform2d transform = new Transform2d(estimateAtTime, observation.visionPose().toPose2d());
 
     // Scale the transform by the Kalman gain
     var kTimesTransform =
@@ -184,5 +184,5 @@ public class RobotState {
   public record OdometryObservation(
       double timestamp, SwerveModulePosition[] wheelPositions, Optional<Rotation2d> gyroAngle) {}
 
-  public record VisionObservation(double timestamp, Pose2d visionPose, Matrix<N3, N1> stdDevs) {}
+  public record VisionObservation(double timestamp, Pose3d visionPose, Matrix<N3, N1> stdDevs) {}
 }

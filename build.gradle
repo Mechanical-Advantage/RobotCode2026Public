@@ -218,7 +218,7 @@ spotless {
     json {
         target fileTree(".") {
             include "**/*.json"
-            exclude "**/build/**", "**/build-*/**", "northstar/**"
+            exclude "**/build/**", "**/build-*/**", ".wpilib/**", "northstar/**"
         }
         gson().indentWithSpaces(2)
     }

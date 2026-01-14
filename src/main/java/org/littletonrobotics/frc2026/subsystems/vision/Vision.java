@@ -104,7 +104,7 @@ public class Vision extends VirtualSubsystem {
     }
 
     // Loop over instances
-    List<Pose2d> allRobotPoses = new ArrayList<>();
+    List<Pose3d> allRobotPoses = new ArrayList<>();
     List<VisionObservation> allVisionObservations = new ArrayList<>();
     for (int instanceIndex = 0; instanceIndex < io.length; instanceIndex++) {
       // Loop over frames
@@ -122,7 +122,7 @@ public class Vision extends VirtualSubsystem {
 
         // Switch based on number of poses
         Pose3d cameraPose = null;
-        Pose2d robotPose = null;
+        Pose3d robotPose = null;
         boolean useVisionRotation = false;
         switch ((int) values[0]) {
           case 1:
@@ -134,10 +134,7 @@ public class Vision extends VirtualSubsystem {
                     values[4],
                     new Rotation3d(new Quaternion(values[5], values[6], values[7], values[8])));
             robotPose =
-                cameraPose
-                    .toPose2d()
-                    .transformBy(
-                        cameras[instanceIndex].pose().toPose2d().toTransform2d().inverse());
+                cameraPose.transformBy(cameras[instanceIndex].pose().toTransform3d().inverse());
             useVisionRotation = true;
             break;
           case 2:
@@ -156,16 +153,15 @@ public class Vision extends VirtualSubsystem {
                     values[11],
                     values[12],
                     new Rotation3d(new Quaternion(values[13], values[14], values[15], values[16])));
-            Transform2d cameraToRobot =
-                cameras[instanceIndex].pose().toPose2d().toTransform2d().inverse();
-            Pose2d robotPose0 = cameraPose0.toPose2d().transformBy(cameraToRobot);
-            Pose2d robotPose1 = cameraPose1.toPose2d().transformBy(cameraToRobot);
+            Transform3d cameraToRobot = cameras[instanceIndex].pose().toTransform3d().inverse();
+            Pose3d robotPose0 = cameraPose0.transformBy(cameraToRobot);
+            Pose3d robotPose1 = cameraPose1.transformBy(cameraToRobot);
 
             // Check for ambiguity and select based on estimated rotation
             if (error0 < error1 * ambiguityThreshold || error1 < error0 * ambiguityThreshold) {
               Rotation2d currentRotation = RobotState.getInstance().getRotation();
-              Rotation2d visionRotation0 = robotPose0.getRotation();
-              Rotation2d visionRotation1 = robotPose1.getRotation();
+              Rotation2d visionRotation0 = robotPose0.toPose2d().getRotation();
+              Rotation2d visionRotation1 = robotPose1.toPose2d().getRotation();
               if (Math.abs(currentRotation.minus(visionRotation0).getRadians())
                   < Math.abs(currentRotation.minus(visionRotation1).getRadians())) {
                 cameraPose = cameraPose0;
@@ -238,7 +234,7 @@ public class Vision extends VirtualSubsystem {
 
       // If no frames from instances, clear robot pose
       if (aprilTagInputs[instanceIndex].timestamps.length == 0) {
-        Logger.recordOutput("AprilTagVision/Inst" + instanceIndex + "/RobotPose", Pose2d.kZero);
+        Logger.recordOutput("AprilTagVision/Inst" + instanceIndex + "/RobotPose", Pose3d.kZero);
       }
 
       // If no recent frames from instance, clear tag poses
@@ -248,7 +244,7 @@ public class Vision extends VirtualSubsystem {
     }
 
     // Log robot poses
-    Logger.recordOutput("AprilTagVision/RobotPoses", allRobotPoses.toArray(Pose2d[]::new));
+    Logger.recordOutput("AprilTagVision/RobotPoses", allRobotPoses.toArray(Pose3d[]::new));
 
     // Log tag poses
     List<Pose3d> allTagPoses = new ArrayList<>();

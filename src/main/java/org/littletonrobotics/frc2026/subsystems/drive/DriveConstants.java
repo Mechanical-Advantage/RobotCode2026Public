@@ -9,40 +9,17 @@ package org.littletonrobotics.frc2026.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import org.littletonrobotics.frc2026.Constants;
+import org.littletonrobotics.frc2026.Constants.RobotType;
 
 public class DriveConstants {
-  public static final double trackWidthXInches = 20.75;
-  public static final double trackWidthYInches = 20.75;
-  public static final double trackWidthX = Units.inchesToMeters(trackWidthXInches);
-  public static final double trackWidthY = Units.inchesToMeters(trackWidthYInches);
-  public static final double driveBaseRadius = Math.hypot(trackWidthX / 2, trackWidthY / 2);
-  public static final double maxLinearSpeed = 4.69;
-  public static final double maxAngularSpeed = 6.46; // maxLinearSpeed / driveBaseRadius
-  public static final double maxLinearAcceleration = 22.0;
-
-  public static final double driveKs = 5.0;
-  public static final double driveKv = 0.0;
-  public static final double driveKp = 35.0;
-  public static final double driveKd = 0.0;
-  public static final double turnKp = 4000.0;
-  public static final double turnKd = 50.0;
-  public static final double turnDeadbandDegrees = 0.3;
-
-  public static final double wheelRadiusInches = 2.0;
-  public static final double wheelRadius = Units.inchesToMeters(wheelRadiusInches);
-  public static final Translation2d[] moduleTranslations = {
-    new Translation2d(trackWidthX / 2, trackWidthY / 2),
-    new Translation2d(trackWidthX / 2, -trackWidthY / 2),
-    new Translation2d(-trackWidthX / 2, trackWidthY / 2),
-    new Translation2d(-trackWidthX / 2, -trackWidthY / 2)
-  };
-
-  public static final double driveCurrentLimitAmps = 80;
-  public static final double turnCurrentLimitAmps = 40;
-  public static final double driveReduction = 6.1224489796;
-  public static final double turnReduction = 21.4285714286;
-
   // MARK: - COMPBOT Constants
+
+  public static final double compbotTrackWidthXInches = 20.75;
+  public static final double compbotTrackWidthYInches = 20.75;
+  public static final double compbotMaxLinearSpeed = 4.69;
+  public static final double compbotMaxAngularSpeed = 6.46; // maxLinearSpeed / driveBaseRadius
+  public static final double compbotWheelRadiusInches = 2.0;
 
   // SDS MK5i modules, R2 reduction
   public static final double compbotDriveReduction = 6.02678571429;
@@ -72,29 +49,77 @@ public class DriveConstants {
 
   // MARK: - ALPHABOT Constants
 
+  public static final double alphabotTrackWidthXInches = 22.75;
+  public static final double alphabotTrackWidthYInches = 22.75;
+  public static final double alphabotMaxLinearSpeed = 4.69;
+  public static final double alphabotMaxAngularSpeed = 6.46; // maxLinearSpeed / driveBaseRadius
+  public static final double alphabotWheelRadiusInches = 2.0;
+
   // SDS MK4i modules, L3 reduction
   public static final double alphabotDriveReduction = 6.1224489796;
   public static final double alphabotTurnReduction = 21.4285714286;
 
   public static final String alphabotCanBus = "";
   public static final int alphabotGyroId = 1;
-  public static final int alphabotDriveMotorIdFL = 2;
-  public static final int alphabotDriveMotorIdFR = 3;
-  public static final int alphabotDriveMotorIdBL = 4;
-  public static final int alphabotDriveMotorIdBR = 5;
+  public static final int alphabotDriveMotorIdFL = 30;
+  public static final int alphabotDriveMotorIdFR = 2;
+  public static final int alphabotDriveMotorIdBL = 1;
+  public static final int alphabotDriveMotorIdBR = 3;
 
-  public static final int alphabotTurnMotorIdFL = 6;
+  public static final int alphabotTurnMotorIdFL = 4;
   public static final int alphabotTurnMotorIdFR = 7;
-  public static final int alphabotTurnMotorIdBL = 8;
-  public static final int alphabotTurnMotorIdBR = 9;
+  public static final int alphabotTurnMotorIdBL = 5;
+  public static final int alphabotTurnMotorIdBR = 6;
 
-  public static final int alphabotEncoderIdFL = 41;
-  public static final int alphabotEncoderIdFR = 42;
-  public static final int alphabotEncoderIdBL = 43;
-  public static final int alphabotEncoderIdBR = 44;
+  public static final int alphabotEncoderIdFL = 0;
+  public static final int alphabotEncoderIdFR = 1;
+  public static final int alphabotEncoderIdBL = 2;
+  public static final int alphabotEncoderIdBR = 3;
 
-  public static final double alphabotEncoderOffsetFL = 0.0;
-  public static final double alphabotEncoderOffsetFR = 0.0;
-  public static final double alphabotEncoderOffsetBL = 0.0;
-  public static final double alphabotEncoderOffsetBR = 0.0;
+  public static final double alphabotEncoderOffsetFL = 0.012886;
+  public static final double alphabotEncoderOffsetFR = 0.866168;
+  public static final double alphabotEncoderOffsetBL = -1.050078;
+  public static final double alphabotEncoderOffsetBR = -2.801255;
+
+  // MARK: - Shared Constants
+
+  public static final double driveKs = 5.0;
+  public static final double driveKv = 0.0;
+  public static final double driveKp = 35.0;
+  public static final double driveKd = 0.0;
+  public static final double turnKp = 4000.0;
+  public static final double turnKd = 50.0;
+  public static final double turnDeadbandDegrees = 0.3;
+  public static final double driveCurrentLimitAmps = 80;
+  public static final double turnCurrentLimitAmps = 40;
+
+  public static final double trackWidthX =
+      Units.inchesToMeters(
+          Constants.robot == RobotType.ALPHABOT
+              ? alphabotTrackWidthXInches
+              : compbotTrackWidthXInches);
+  public static final double trackWidthY =
+      Units.inchesToMeters(
+          Constants.robot == RobotType.ALPHABOT
+              ? alphabotTrackWidthYInches
+              : compbotTrackWidthYInches);
+  public static final double driveBaseRadius = Math.hypot(trackWidthX / 2, trackWidthY / 2);
+  public static final double maxLinearSpeed =
+      Constants.robot == RobotType.ALPHABOT ? alphabotMaxLinearSpeed : compbotMaxLinearSpeed;
+  public static final double maxAngularSpeed =
+      Constants.robot == RobotType.ALPHABOT ? alphabotMaxAngularSpeed : compbotMaxAngularSpeed;
+  public static final double wheelRadiusInches =
+      Constants.robot == RobotType.ALPHABOT ? alphabotWheelRadiusInches : compbotWheelRadiusInches;
+  public static final double wheelRadius = Units.inchesToMeters(wheelRadiusInches);
+  public static final Translation2d[] moduleTranslations = {
+    new Translation2d(trackWidthX / 2, trackWidthY / 2),
+    new Translation2d(trackWidthX / 2, -trackWidthY / 2),
+    new Translation2d(-trackWidthX / 2, trackWidthY / 2),
+    new Translation2d(-trackWidthX / 2, -trackWidthY / 2)
+  };
+
+  public static final double driveReduction =
+      Constants.robot == RobotType.ALPHABOT ? compbotDriveReduction : alphabotDriveReduction;
+  public static final double turnReduction =
+      Constants.robot == RobotType.ALPHABOT ? compbotTurnReduction : alphabotTurnReduction;
 }

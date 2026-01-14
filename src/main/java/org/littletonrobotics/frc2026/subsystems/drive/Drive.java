@@ -44,6 +44,7 @@ public class Drive extends FullSubsystem {
       new LoggedTunableNumber("Drive/CoastMetersPerSecThreshold", .05);
 
   private final Timer lastMovementTimer = new Timer();
+  private boolean hasStartedCoast = false;
 
   private SwerveDriveKinematics kinematics =
       new SwerveDriveKinematics(DriveConstants.moduleTranslations);
@@ -102,13 +103,18 @@ public class Drive extends FullSubsystem {
       lastMovementTimer.reset();
     }
     if (DriverStation.isDisabled()) {
-      for (var module : modules) {
-        if (lastMovementTimer.hasElapsed(coastWaitTime.get())) {
+      if (hasStartedCoast || lastMovementTimer.hasElapsed(coastWaitTime.get())) {
+        for (var module : modules) {
           module.coast();
-        } else {
+        }
+        hasStartedCoast = true;
+      } else {
+        for (var module : modules) {
           module.brake();
         }
       }
+    } else {
+      hasStartedCoast = false;
     }
 
     // Record cycle time
