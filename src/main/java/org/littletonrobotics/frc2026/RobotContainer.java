@@ -9,6 +9,7 @@ package org.littletonrobotics.frc2026;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -24,9 +25,17 @@ import org.littletonrobotics.frc2026.subsystems.drive.Drive;
 import org.littletonrobotics.frc2026.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIO;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIOSim;
+import org.littletonrobotics.frc2026.subsystems.flywheel.Flywheel;
+import org.littletonrobotics.frc2026.subsystems.flywheel.FlywheelIO;
+import org.littletonrobotics.frc2026.subsystems.hood.Hood;
+import org.littletonrobotics.frc2026.subsystems.hood.HoodIO;
+import org.littletonrobotics.frc2026.subsystems.hopper.Hopper;
+import org.littletonrobotics.frc2026.subsystems.intake.Intake;
+import org.littletonrobotics.frc2026.subsystems.kicker.Kicker;
 import org.littletonrobotics.frc2026.subsystems.leds.Leds;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIOHAL;
+import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
 import org.littletonrobotics.frc2026.util.controllers.OverrideSwitches;
 import org.littletonrobotics.frc2026.util.controllers.RazerWolverineController;
@@ -38,6 +47,11 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private Drive drive;
+  private Intake intake;
+  private Hopper hopper;
+  private Kicker kicker;
+  private Hood hood;
+  private Flywheel flywheel;
   private Vision vision;
   private Leds leds;
 
@@ -91,6 +105,18 @@ public class RobotContainer {
               new ModuleIO() {},
               new ModuleIO() {});
     }
+    if (intake == null) {
+      intake = new Intake(new RollerSystemIO() {});
+    }
+    if (hopper == null) {
+      hopper = new Hopper(new RollerSystemIO() {});
+    }
+    if (hood == null) {
+      hood = new Hood(new HoodIO() {});
+    }
+    if (flywheel == null) {
+      flywheel = new Flywheel(new FlywheelIO() {});
+    }
     if (vision == null) {
       switch (Constants.robot) {
         case COMPBOT -> vision = new Vision(this::getSelectedAprilTagLayout);
@@ -121,6 +147,57 @@ public class RobotContainer {
     drive.setDefaultCommand(DriveCommands.joystickDrive(drive, driverX, driverY, driverOmega));
 
     // ***** PRIMARY CONTROLLER *****
+    primary.x().onTrue(Commands.runOnce(() -> hood.zero()).ignoringDisable(true));
+    primary
+        .y()
+        .whileTrue(
+            Commands.startEnd(
+                () -> hood.setGoalParams(Units.degreesToRadians(50), 0),
+                () -> hood.setGoalParams(Units.degreesToRadians(20), 0),
+                hood));
+    primary
+        .leftTrigger()
+        .whileTrue(
+            Commands.startEnd(
+                () -> intake.setGoal(Intake.Goal.INTAKE),
+                () -> intake.setGoal(Intake.Goal.STOP),
+                intake));
+    primary
+        .rightTrigger()
+        .whileTrue(
+            Commands.parallel(
+                Commands.startEnd(
+                    () -> intake.setGoal(Intake.Goal.OUTTAKE),
+                    () -> intake.setGoal(Intake.Goal.STOP),
+                    intake),
+                Commands.startEnd(
+                    () -> hopper.setGoal(Hopper.Goal.OUTTAKE),
+                    () -> hopper.setGoal(Hopper.Goal.STOP),
+                    hopper)));
+    primary
+        .upperRightPaddle()
+        .whileTrue(
+            Commands.runEnd(() -> flywheel.runVelocity(75.0), () -> flywheel.stop(), flywheel));
+
+    primary
+        .leftBumper()
+        .whileTrue(
+            Commands.parallel(
+                Commands.startEnd(
+                    () -> hopper.setGoal(Hopper.Goal.SHOOT),
+                    () -> hopper.setGoal(Hopper.Goal.STOP),
+                    hopper),
+                Commands.startEnd(
+                    () -> kicker.setGoal(Kicker.Goal.SHOOT),
+                    () -> kicker.setGoal(Kicker.Goal.STOP),
+                    kicker)));
+    primary
+        .rightBumper()
+        .whileTrue(
+            Commands.startEnd(
+                () -> kicker.setGoal(Kicker.Goal.OUTTAKE),
+                () -> kicker.setGoal(Kicker.Goal.STOP),
+                kicker));
 
     // ***** SECONDARY CONTROLLER *****
 
