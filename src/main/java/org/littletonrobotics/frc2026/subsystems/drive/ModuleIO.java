@@ -14,16 +14,16 @@ public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {
     public boolean driveConnected = false;
-    public double drivePositionRad = 0.0;
-    public double driveVelocityRadPerSec = 0.0;
+    public double drivePositionRads = 0.0;
+    public double driveVelocityRadsPerSec = 0.0;
     public double driveAppliedVolts = 0.0;
     public double driveSupplyCurrentAmps = 0.0;
     public double driveTorqueCurrentAmps = 0.0;
 
     public boolean turnConnected = false;
-    public Rotation2d turnAbsolutePosition = Rotation2d.kZero;
-    public Rotation2d turnPosition = Rotation2d.kZero;
-    public double turnVelocityRadPerSec = 0.0;
+    public Rotation2d turnAbsolutePositionRads = Rotation2d.kZero;
+    public Rotation2d turnPositionRads = Rotation2d.kZero;
+    public double turnVelocityRadsPerSec = 0.0;
     public double turnAppliedVolts = 0.0;
     public double turnSupplyCurrentAmps = 0.0;
     public double turnTorqueCurrentAmps = 0.0;

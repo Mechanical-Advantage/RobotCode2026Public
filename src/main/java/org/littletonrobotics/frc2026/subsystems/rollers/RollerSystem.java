@@ -26,7 +26,6 @@ public class RollerSystem extends FullSubsystem {
   private final Debouncer motorConnectedDebouncer =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
   private final Alert disconnected;
-  private final Alert tempFault;
 
   @Setter private double volts = 0.0;
   @Setter private boolean brakeModeEnabled = true;
@@ -37,7 +36,6 @@ public class RollerSystem extends FullSubsystem {
     this.io = io;
 
     disconnected = new Alert(name + " motor disconnected!", Alert.AlertType.kWarning);
-    tempFault = new Alert(name + " motor too hot! 🥵", Alert.AlertType.kWarning);
   }
 
   public void periodic() {
@@ -45,7 +43,6 @@ public class RollerSystem extends FullSubsystem {
     Logger.processInputs(inputsName, inputs);
     disconnected.set(
         Robot.showHardwareAlerts() && !motorConnectedDebouncer.calculate(inputs.connected));
-    tempFault.set(inputs.tempFault);
 
     // Run roller
     outputs.appliedVoltage = volts;

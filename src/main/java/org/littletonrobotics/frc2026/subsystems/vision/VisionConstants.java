@@ -8,8 +8,15 @@
 package org.littletonrobotics.frc2026.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.util.Units;
+import java.util.Optional;
+import java.util.function.Function;
 import lombok.Builder;
 import org.littletonrobotics.frc2026.Constants;
+import org.littletonrobotics.frc2026.RobotState;
 
 public class VisionConstants {
   public static final double ambiguityThreshold = 0.4;
@@ -18,16 +25,53 @@ public class VisionConstants {
   public static final double xyStdDevCoefficient = 0.01;
   public static final double thetaStdDevCoefficient = 0.03;
 
+  private static int monoExposure = 2200;
+  private static double monoGain = 17.5;
+  private static double monoDenoise = 1.0;
+
   public static CameraConfig[] cameras =
       switch (Constants.robot) {
         case COMPBOT -> new CameraConfig[] {};
-        case ALPHABOT -> new CameraConfig[] {};
+        case ALPHABOT ->
+            new CameraConfig[] {
+              CameraConfig.builder()
+                  .poseFunction(
+                      (Double timestamp) -> {
+                        Optional<Rotation2d> turretAngle =
+                            RobotState.getInstance().getTurretAngle(timestamp);
+                        if (turretAngle.isEmpty()) {
+                          return Optional.empty();
+                        } else {
+                          return Optional.of(
+                              new Pose3d(
+                                      Units.inchesToMeters(-7.75),
+                                      0.0,
+                                      Units.inchesToMeters(28.231),
+                                      new Rotation3d(turretAngle.get()))
+                                  .transformBy(
+                                      new Transform3d(
+                                          Units.inchesToMeters(-5.174),
+                                          0.0,
+                                          0.0,
+                                          new Rotation3d(
+                                              0.0, Units.degreesToRadians(-22.5), 0.0))));
+                        }
+                      })
+                  .id("40552081")
+                  .width(1600)
+                  .height(1200)
+                  .exposure(monoExposure)
+                  .gain(monoGain)
+                  .denoise(monoDenoise)
+                  .stdDevFactor(1.0)
+                  .build()
+            };
         default -> new CameraConfig[] {};
       };
 
   @Builder
   public record CameraConfig(
-      Pose3d pose,
+      Function<Double, Optional<Pose3d>> poseFunction,
       String id,
       int width,
       int height,

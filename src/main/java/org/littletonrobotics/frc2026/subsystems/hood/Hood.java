@@ -9,12 +9,15 @@ package org.littletonrobotics.frc2026.subsystems.hood;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.DriverStation;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.littletonrobotics.frc2026.AlphaMechanism3d;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Robot;
 import org.littletonrobotics.frc2026.subsystems.hood.HoodIO.HoodIOOutputMode;
@@ -99,43 +102,57 @@ public class Hood extends FullSubsystem {
                   maxVelocityRadPerSec.get(), maxAccelerationRadPerSec2.get()));
     }
 
-    // Clamp goal
-    var goalState =
-        new State(
-            MathUtil.clamp(goalAngle, minAngle, maxAngle),
-            MathUtil.clamp(goalVelocity, 0.0, maxVelocityRadPerSec.get()));
-    double previousVelocity = setpoint.velocity;
-    setpoint = profile.calculate(Constants.loopPeriodSecs, setpoint, goalState);
-    if (setpoint.position < minAngle || setpoint.position > maxAngle) {
-      setpoint =
-          new State(
-              MathUtil.clamp(setpoint.position, minAngle, maxAngle),
-              MathUtil.clamp(setpoint.velocity, 0.0, maxVelocityRadPerSec.get()));
+    if (DriverStation.isDisabled()) {
+      setpoint = new State(getMeasuredAngleRad(), 0.0);
     }
 
-    // Check at goal
-    atGoal =
-        EqualsUtil.epsilonEquals(setpoint.position, goalState.position)
-            && EqualsUtil.epsilonEquals(setpoint.velocity, goalState.velocity);
-
-    // Run
-    double accel = (setpoint.velocity - previousVelocity) / Constants.loopPeriodSecs;
-    outputs.positionRad = setpoint.position - hoodOffset;
-    outputs.velocityRadsPerSec = setpoint.velocity;
-    outputs.feedforward =
-        kS.get() * Math.signum(setpoint.velocity)
-            + kG.get() * Math.cos(setpoint.position)
-            + kA.get() * accel;
-    outputs.mode = HoodIOOutputMode.CLOSED_LOOP;
-
-    // Log state
-    Logger.recordOutput("Hood/Profile/SetpointPositionRad", setpoint.position);
-    Logger.recordOutput("Hood/Profile/SetpointVelocityRadPerSec", setpoint.velocity);
-    Logger.recordOutput("Hood/Profile/GoalPositionRad", goalState.position);
-    Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", goalState.velocity);
+    // Visualize turret in 3D
+    AlphaMechanism3d.getMeasured().setHoodAngle(new Rotation2d(getMeasuredAngleRad()));
 
     // Record cycle time
     LoggedTracer.record("Hood");
+  }
+
+  @Override
+  public void periodicAfterScheduler() {
+    if (DriverStation.isEnabled()) {
+      // Clamp goal
+      var goalState =
+          new State(
+              MathUtil.clamp(goalAngle, minAngle, maxAngle),
+              MathUtil.clamp(goalVelocity, 0.0, maxVelocityRadPerSec.get()));
+      double previousVelocity = setpoint.velocity;
+      setpoint = profile.calculate(Constants.loopPeriodSecs, setpoint, goalState);
+      if (setpoint.position < minAngle || setpoint.position > maxAngle) {
+        setpoint =
+            new State(
+                MathUtil.clamp(setpoint.position, minAngle, maxAngle),
+                MathUtil.clamp(setpoint.velocity, 0.0, maxVelocityRadPerSec.get()));
+      }
+
+      // Check at goal
+      atGoal =
+          EqualsUtil.epsilonEquals(setpoint.position, goalState.position)
+              && EqualsUtil.epsilonEquals(setpoint.velocity, goalState.velocity);
+
+      // Run
+      double accel = (setpoint.velocity - previousVelocity) / Constants.loopPeriodSecs;
+      outputs.positionRad = setpoint.position - hoodOffset;
+      outputs.velocityRadsPerSec = setpoint.velocity;
+      outputs.feedforward =
+          kS.get() * Math.signum(setpoint.velocity)
+              + kG.get() * Math.cos(setpoint.position)
+              + kA.get() * accel;
+      outputs.mode = HoodIOOutputMode.CLOSED_LOOP;
+
+      // Log state
+      Logger.recordOutput("Hood/Profile/SetpointPositionRad", setpoint.position);
+      Logger.recordOutput("Hood/Profile/SetpointVelocityRadPerSec", setpoint.velocity);
+      Logger.recordOutput("Hood/Profile/GoalPositionRad", goalState.position);
+      Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", goalState.velocity);
+    }
+
+    io.applyOutputs(outputs);
   }
 
   public void setGoalParams(double angle, double velocity) {
@@ -143,17 +160,12 @@ public class Hood extends FullSubsystem {
     goalVelocity = velocity;
   }
 
-  @Override
-  public void periodicAfterScheduler() {
-    io.applyOutputs(outputs);
-  }
-
   @AutoLogOutput(key = "Hood/MeasuredAngleRads")
   public double getMeasuredAngleRad() {
-    return inputs.internalPosition + hoodOffset;
+    return inputs.positionRads + hoodOffset;
   }
 
   public void zero() {
-    hoodOffset = minAngle - inputs.internalPosition;
+    hoodOffset = minAngle - inputs.positionRads;
   }
 }

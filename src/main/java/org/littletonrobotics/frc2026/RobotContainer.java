@@ -36,7 +36,11 @@ import org.littletonrobotics.frc2026.subsystems.leds.Leds;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIOHAL;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO;
+import org.littletonrobotics.frc2026.subsystems.turret.Turret;
+import org.littletonrobotics.frc2026.subsystems.turret.TurretIO;
+import org.littletonrobotics.frc2026.subsystems.turret.TurretIOSim;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
+import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
 import org.littletonrobotics.frc2026.util.controllers.OverrideSwitches;
 import org.littletonrobotics.frc2026.util.controllers.RazerWolverineController;
 import org.littletonrobotics.frc2026.util.controllers.TriggerUtil;
@@ -52,6 +56,7 @@ public class RobotContainer {
   private Kicker kicker;
   private Hood hood;
   private Flywheel flywheel;
+  private Turret turret;
   private Vision vision;
   private Leds leds;
 
@@ -90,6 +95,7 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
+          turret = new Turret(new TurretIOSim() {});
           leds = new Leds(new LedsIOHAL());
           break;
       }
@@ -117,10 +123,13 @@ public class RobotContainer {
     if (flywheel == null) {
       flywheel = new Flywheel(new FlywheelIO() {});
     }
+    if (turret == null) {
+      turret = new Turret(new TurretIO() {});
+    }
     if (vision == null) {
       switch (Constants.robot) {
         case COMPBOT -> vision = new Vision(this::getSelectedAprilTagLayout);
-        case ALPHABOT -> vision = new Vision(this::getSelectedAprilTagLayout);
+        case ALPHABOT -> vision = new Vision(this::getSelectedAprilTagLayout, new VisionIO() {});
         default -> vision = new Vision(this::getSelectedAprilTagLayout);
       }
     }
@@ -147,7 +156,15 @@ public class RobotContainer {
     drive.setDefaultCommand(DriveCommands.joystickDrive(drive, driverX, driverY, driverOmega));
 
     // ***** PRIMARY CONTROLLER *****
-    primary.x().onTrue(Commands.runOnce(() -> hood.zero()).ignoringDisable(true));
+    primary
+        .x()
+        .onTrue(
+            Commands.runOnce(
+                    () -> {
+                      hood.zero();
+                      turret.zero();
+                    })
+                .ignoringDisable(true));
     primary
         .y()
         .whileTrue(
@@ -200,6 +217,29 @@ public class RobotContainer {
                 kicker));
 
     // ***** SECONDARY CONTROLLER *****
+    secondary
+        .rightTrigger()
+        .onTrue(
+            Commands.runOnce(
+                () -> turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(0)), 0)));
+    secondary
+        .rightBumper()
+        .onTrue(
+            Commands.runOnce(
+                () ->
+                    turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(90)), 0)));
+    secondary
+        .leftTrigger()
+        .onTrue(
+            Commands.runOnce(
+                () ->
+                    turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(180)), 0)));
+    secondary
+        .leftBumper()
+        .onTrue(
+            Commands.runOnce(
+                () ->
+                    turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(270)), 0)));
 
     // Reset gyro
     secondary

@@ -29,6 +29,7 @@ public class RollerSystemIOSim implements RollerSystemIO {
   public void updateInputs(RollerSystemIOInputs inputs) {
     sim.update(Constants.loopPeriodSecs);
 
+    inputs.connected = true;
     inputs.positionRads = sim.getAngularPositionRad();
     inputs.velocityRadsPerSec = sim.getAngularVelocityRadPerSec();
     inputs.appliedVoltage = appliedVoltage;
@@ -36,8 +37,6 @@ public class RollerSystemIOSim implements RollerSystemIO {
     inputs.torqueCurrentAmps =
         gearbox.getCurrent(sim.getAngularVelocityRadPerSec(), appliedVoltage);
     inputs.tempCelsius = 0.0;
-    inputs.tempFault = false;
-    inputs.connected = true;
   }
 
   @Override

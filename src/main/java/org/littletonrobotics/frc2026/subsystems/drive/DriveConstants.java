@@ -59,7 +59,7 @@ public class DriveConstants {
   public static final double alphabotDriveReduction = 6.1224489796;
   public static final double alphabotTurnReduction = 21.4285714286;
 
-  public static final String alphabotCanBus = "";
+  public static final String alphabotCanBus = "*";
   public static final int alphabotGyroId = 1;
   public static final int alphabotDriveMotorIdFL = 30;
   public static final int alphabotDriveMotorIdFR = 2;

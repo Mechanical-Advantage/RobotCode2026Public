@@ -5,14 +5,13 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.hood;
+package org.littletonrobotics.frc2026.subsystems.turret;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface HoodIO {
-
+public interface TurretIO {
   @AutoLog
-  public static class HoodIOInputs {
+  public static class TurretIOInputs {
     // TODO: add encoder
     boolean motorConnected = false;
     double positionRads = 0.0;
@@ -20,27 +19,25 @@ public interface HoodIO {
     double appliedVolts = 0.0;
     double supplyCurrentAmps = 0.0;
     double torqueCurrentAmps = 0.0;
-    double tempCelsius = 0.0;
   }
 
-  public static enum HoodIOOutputMode {
+  public static enum TurretIOOutputMode {
     BRAKE,
     COAST,
     CLOSED_LOOP
   }
 
-  public static class HoodIOOutputs {
+  public static class TurretIOOutputs {
+    public TurretIOOutputMode mode = TurretIOOutputMode.BRAKE;
 
-    public HoodIOOutputMode mode = HoodIOOutputMode.BRAKE;
-    // Closed loop control
-    public double positionRad = 0.0;
-    public double velocityRadsPerSec = 0.0;
-    public double feedforward = 0.0;
+    // closed loop control
+    public double position = 0.0;
+    public double velocity = 0.0;
     public double kP = 0.0;
     public double kD = 0.0;
   }
 
-  public default void updateInputs(HoodIOInputs inputs) {}
+  public default void updateInputs(TurretIOInputs inputs) {}
 
-  public default void applyOutputs(HoodIOOutputs outputs) {}
+  public default void applyOutputs(TurretIOOutputs outputs) {}
 }

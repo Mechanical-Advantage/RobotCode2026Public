@@ -38,8 +38,8 @@ public class HoodIOSim implements HoodIO {
     sim.update(Constants.loopPeriodSecs);
 
     inputs.motorConnected = true;
-    inputs.internalPosition = sim.getAngleRads();
-    inputs.velocityRadPerSec = sim.getVelocityRadPerSec();
+    inputs.positionRads = sim.getAngleRads();
+    inputs.velocityRadsPerSec = sim.getVelocityRadPerSec();
     inputs.appliedVolts = appliedVolts;
     inputs.supplyCurrentAmps = sim.getCurrentDrawAmps();
     inputs.torqueCurrentAmps = currentOutput;

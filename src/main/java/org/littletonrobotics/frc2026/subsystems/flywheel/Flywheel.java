@@ -10,7 +10,7 @@ package org.littletonrobotics.frc2026.subsystems.flywheel;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.Alert;
-import lombok.Setter;
+import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Robot;
 import org.littletonrobotics.frc2026.subsystems.flywheel.FlywheelIO.FlywheelIOOutputs;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
@@ -26,10 +26,35 @@ public class Flywheel extends FullSubsystem {
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
   private final Alert disconnected;
 
-  @Setter private double volts = 0.0;
+  public static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS");
+  public static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP");
+  public static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD");
   private static final LoggedTunableNumber rateLimiter =
-      new LoggedTunableNumber("Flywheel/SlewRateLimiter", 100);
+      new LoggedTunableNumber("Flywheel/SlewRateLimiter");
   SlewRateLimiter slewRateLimiter = new SlewRateLimiter(rateLimiter.get());
+
+  static {
+    switch (Constants.robot) {
+      case COMPBOT -> {
+        rateLimiter.initDefault(100);
+        kS.initDefault(0.0);
+        kP.initDefault(0.0);
+        kD.initDefault(0.0);
+      }
+      case ALPHABOT -> {
+        rateLimiter.initDefault(100);
+        kS.initDefault(0.0);
+        kP.initDefault(15.0);
+        kD.initDefault(0.0);
+      }
+      default -> {
+        rateLimiter.initDefault(0.0);
+        kS.initDefault(0.0);
+        kP.initDefault(0.0);
+        kD.initDefault(0.0);
+      }
+    }
+  }
 
   public Flywheel(FlywheelIO io) {
     this.io = io;
@@ -44,8 +69,8 @@ public class Flywheel extends FullSubsystem {
     if (rateLimiter.hasChanged(hashCode())) {
       slewRateLimiter = new SlewRateLimiter(rateLimiter.get());
     }
-    outputs.kP = FlywheelConstants.kp.get();
-    outputs.kD = FlywheelConstants.kd.get();
+    outputs.kP = kP.get();
+    outputs.kD = kD.get();
 
     if (outputs.coast) {
       slewRateLimiter.reset(inputs.velocityRadsPerSec);
@@ -64,7 +89,7 @@ public class Flywheel extends FullSubsystem {
   public void runVelocity(double velocityRadsPerSec) {
     outputs.coast = false;
     outputs.velocityRadsPerSec = slewRateLimiter.calculate(velocityRadsPerSec);
-    outputs.feedForward = FlywheelConstants.ks * Math.signum(velocityRadsPerSec);
+    outputs.feedForward = kS.get() * Math.signum(velocityRadsPerSec);
 
     // Log flywheel setpoint
     Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);

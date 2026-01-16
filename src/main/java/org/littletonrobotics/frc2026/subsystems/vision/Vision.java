@@ -75,8 +75,8 @@ public class Vision extends VirtualSubsystem {
     for (int i = 0; i < io.length; i++) {
       io[i].updateInputs(inputs[i], aprilTagInputs[i], objDetectInputs[i]);
       Logger.processInputs("Vision/Inst" + i, inputs[i]);
-      Logger.processInputs("AprilTagVision/Inst" + i, aprilTagInputs[i]);
-      Logger.processInputs("ObjDetectVision/Inst" + i, objDetectInputs[i]);
+      Logger.processInputs("Vision/AprilTags/Inst" + i, aprilTagInputs[i]);
+      Logger.processInputs("Vision/ObjDetect/Inst" + i, objDetectInputs[i]);
     }
 
     // Update recording state
@@ -112,11 +112,13 @@ public class Vision extends VirtualSubsystem {
           frameIndex < aprilTagInputs[instanceIndex].timestamps.length;
           frameIndex++) {
         lastFrameTimes.put(instanceIndex, Timer.getTimestamp());
+
         var timestamp = aprilTagInputs[instanceIndex].timestamps[frameIndex];
         var values = aprilTagInputs[instanceIndex].frames[frameIndex];
+        var robotToCamera = cameras[instanceIndex].poseFunction().apply(timestamp);
 
         // Exit if blank frame
-        if (values.length == 0 || values[0] == 0) {
+        if (values.length == 0 || values[0] == 0 || robotToCamera.isEmpty()) {
           continue;
         }
 
@@ -133,8 +135,7 @@ public class Vision extends VirtualSubsystem {
                     values[3],
                     values[4],
                     new Rotation3d(new Quaternion(values[5], values[6], values[7], values[8])));
-            robotPose =
-                cameraPose.transformBy(cameras[instanceIndex].pose().toTransform3d().inverse());
+            robotPose = cameraPose.transformBy(robotToCamera.get().toTransform3d().inverse());
             useVisionRotation = true;
             break;
           case 2:
@@ -153,7 +154,7 @@ public class Vision extends VirtualSubsystem {
                     values[11],
                     values[12],
                     new Rotation3d(new Quaternion(values[13], values[14], values[15], values[16])));
-            Transform3d cameraToRobot = cameras[instanceIndex].pose().toTransform3d().inverse();
+            Transform3d cameraToRobot = robotToCamera.get().toTransform3d().inverse();
             Pose3d robotPose0 = cameraPose0.transformBy(cameraToRobot);
             Pose3d robotPose1 = cameraPose1.transformBy(cameraToRobot);
 

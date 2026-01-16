@@ -35,13 +35,13 @@ public class FlywheelIOSim implements FlywheelIO {
     sim.setInputVoltage(MathUtil.clamp(appliedVolts, -12.0, 12.0));
     sim.update(Constants.loopPeriodSecs);
 
+    inputs.connected = true;
     inputs.positionRads = sim.getAngularPositionRad();
     inputs.velocityRadsPerSec = sim.getAngularVelocityRadPerSec();
     inputs.appliedVoltage = appliedVolts;
     inputs.supplyCurrentAmps = sim.getCurrentDrawAmps();
     inputs.torqueCurrentAmps = currentOutput;
     inputs.tempCelsius = 0.0;
-    inputs.connected = true;
   }
 
   @Override
