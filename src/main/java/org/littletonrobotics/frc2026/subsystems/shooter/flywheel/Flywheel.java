@@ -5,14 +5,17 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.flywheel;
+package org.littletonrobotics.frc2026.subsystems.shooter.flywheel;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj2.command.Command;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Robot;
-import org.littletonrobotics.frc2026.subsystems.flywheel.FlywheelIO.FlywheelIOOutputs;
+import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
+import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputs;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
@@ -42,9 +45,9 @@ public class Flywheel extends FullSubsystem {
         kD.initDefault(0.0);
       }
       case ALPHABOT -> {
-        rateLimiter.initDefault(100);
+        rateLimiter.initDefault(300);
         kS.initDefault(0.0);
-        kP.initDefault(15.0);
+        kP.initDefault(10.0);
         kD.initDefault(0.0);
       }
       default -> {
@@ -86,7 +89,7 @@ public class Flywheel extends FullSubsystem {
   }
 
   /** Run closed loop at the specified velocity. */
-  public void runVelocity(double velocityRadsPerSec) {
+  private void runVelocity(double velocityRadsPerSec) {
     outputs.coast = false;
     outputs.velocityRadsPerSec = slewRateLimiter.calculate(velocityRadsPerSec);
     outputs.feedForward = kS.get() * Math.signum(velocityRadsPerSec);
@@ -96,7 +99,7 @@ public class Flywheel extends FullSubsystem {
   }
 
   /** Stops the flywheel. */
-  public void stop() {
+  private void stop() {
     outputs.velocityRadsPerSec = 0.0;
     outputs.coast = true;
   }
@@ -104,5 +107,19 @@ public class Flywheel extends FullSubsystem {
   /** Returns the current velocity in RPM. */
   public double getVelocity() {
     return inputs.velocityRadsPerSec;
+  }
+
+  public Command runTrackTargetCommand() {
+    return runEnd(
+        () -> runVelocity(ShotCalculator.getInstance().getParameters().flywheelSpeed()),
+        this::stop);
+  }
+
+  public Command runFixedCommand(DoubleSupplier velocity) {
+    return runEnd(() -> runVelocity(velocity.getAsDouble()), this::stop);
+  }
+
+  public Command stopCommand() {
+    return runOnce(this::stop);
   }
 }

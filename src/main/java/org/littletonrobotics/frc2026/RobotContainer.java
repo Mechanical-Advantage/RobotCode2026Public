@@ -25,10 +25,6 @@ import org.littletonrobotics.frc2026.subsystems.drive.Drive;
 import org.littletonrobotics.frc2026.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIO;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIOSim;
-import org.littletonrobotics.frc2026.subsystems.flywheel.Flywheel;
-import org.littletonrobotics.frc2026.subsystems.flywheel.FlywheelIO;
-import org.littletonrobotics.frc2026.subsystems.hood.Hood;
-import org.littletonrobotics.frc2026.subsystems.hood.HoodIO;
 import org.littletonrobotics.frc2026.subsystems.hopper.Hopper;
 import org.littletonrobotics.frc2026.subsystems.intake.Intake;
 import org.littletonrobotics.frc2026.subsystems.kicker.Kicker;
@@ -36,11 +32,16 @@ import org.littletonrobotics.frc2026.subsystems.leds.Leds;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIOHAL;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO;
-import org.littletonrobotics.frc2026.subsystems.turret.Turret;
-import org.littletonrobotics.frc2026.subsystems.turret.TurretIO;
-import org.littletonrobotics.frc2026.subsystems.turret.TurretIOSim;
+import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.Flywheel;
+import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.FlywheelIO;
+import org.littletonrobotics.frc2026.subsystems.shooter.hood.Hood;
+import org.littletonrobotics.frc2026.subsystems.shooter.hood.HoodIO;
+import org.littletonrobotics.frc2026.subsystems.shooter.turret.Turret;
+import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIO;
+import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIOSim;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
 import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
+import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2026.util.controllers.OverrideSwitches;
 import org.littletonrobotics.frc2026.util.controllers.RazerWolverineController;
 import org.littletonrobotics.frc2026.util.controllers.TriggerUtil;
@@ -74,6 +75,10 @@ public class RobotContainer {
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
+  private final LoggedTunableNumber presetHoodAngleDegrees =
+      new LoggedTunableNumber("PresetHoodAngleDegrees", 30.0);
+  private final LoggedTunableNumber presetFlywheelSpeedRadPerSec =
+      new LoggedTunableNumber("PresetFlywheelSpeedRadPerSec", 100);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -145,6 +150,10 @@ public class RobotContainer {
 
     // Configure the button bindings
     configureButtonBindings();
+
+    // Set default commands
+    hood.setDefaultCommand(hood.runTrackTargetCommand());
+    turret.setDefaultCommand(turret.runTrackTargetCommand());
   }
 
   /** Create the bindings between buttons and commands. */
@@ -156,22 +165,7 @@ public class RobotContainer {
     drive.setDefaultCommand(DriveCommands.joystickDrive(drive, driverX, driverY, driverOmega));
 
     // ***** PRIMARY CONTROLLER *****
-    primary
-        .x()
-        .onTrue(
-            Commands.runOnce(
-                    () -> {
-                      hood.zero();
-                      turret.zero();
-                    })
-                .ignoringDisable(true));
-    primary
-        .y()
-        .whileTrue(
-            Commands.startEnd(
-                () -> hood.setGoalParams(Units.degreesToRadians(50), 0),
-                () -> hood.setGoalParams(Units.degreesToRadians(20), 0),
-                hood));
+    primary.x().onTrue(hood.zeroCommand().alongWith(turret.zeroCommand()));
     primary
         .leftTrigger()
         .whileTrue(
@@ -192,12 +186,22 @@ public class RobotContainer {
                     () -> hopper.setGoal(Hopper.Goal.STOP),
                     hopper)));
     primary
-        .upperRightPaddle()
-        .whileTrue(
-            Commands.runEnd(() -> flywheel.runVelocity(75.0), () -> flywheel.stop(), flywheel));
-
-    primary
         .leftBumper()
+        .whileTrue(
+            flywheel
+                .runTrackTargetCommand()
+                .alongWith(turret.runTrackTargetActiveShootingCommand()));
+    primary
+        .leftClaw()
+        .whileTrue(
+            flywheel
+                .runFixedCommand(presetFlywheelSpeedRadPerSec)
+                .alongWith(
+                    hood.runFixedCommand(
+                        () -> Units.degreesToRadians(presetHoodAngleDegrees.get()), () -> 0.0),
+                    turret.runTrackTargetActiveShootingCommand()));
+    primary
+        .rightBumper()
         .whileTrue(
             Commands.parallel(
                 Commands.startEnd(
@@ -208,38 +212,8 @@ public class RobotContainer {
                     () -> kicker.setGoal(Kicker.Goal.SHOOT),
                     () -> kicker.setGoal(Kicker.Goal.STOP),
                     kicker)));
-    primary
-        .rightBumper()
-        .whileTrue(
-            Commands.startEnd(
-                () -> kicker.setGoal(Kicker.Goal.OUTTAKE),
-                () -> kicker.setGoal(Kicker.Goal.STOP),
-                kicker));
 
     // ***** SECONDARY CONTROLLER *****
-    secondary
-        .rightTrigger()
-        .onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(0)), 0)));
-    secondary
-        .rightBumper()
-        .onTrue(
-            Commands.runOnce(
-                () ->
-                    turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(90)), 0)));
-    secondary
-        .leftTrigger()
-        .onTrue(
-            Commands.runOnce(
-                () ->
-                    turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(180)), 0)));
-    secondary
-        .leftBumper()
-        .onTrue(
-            Commands.runOnce(
-                () ->
-                    turret.setFieldRelativeTarget(new Rotation2d(Units.degreesToRadians(270)), 0)));
 
     // Reset gyro
     secondary

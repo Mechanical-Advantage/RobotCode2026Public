@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.turret;
+package org.littletonrobotics.frc2026.subsystems.shooter.turret;
 
 import org.littletonrobotics.junction.AutoLog;
 

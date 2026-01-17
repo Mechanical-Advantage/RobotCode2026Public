@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.turret;
+package org.littletonrobotics.frc2026.subsystems.shooter.turret;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
@@ -16,15 +16,19 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
 import org.littletonrobotics.frc2026.AlphaMechanism3d;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Robot;
 import org.littletonrobotics.frc2026.RobotState;
-import org.littletonrobotics.frc2026.subsystems.turret.TurretIO.TurretIOOutputMode;
-import org.littletonrobotics.frc2026.subsystems.turret.TurretIO.TurretIOOutputs;
+import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
+import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIO.TurretIOOutputMode;
+import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
@@ -55,8 +59,8 @@ public class Turret extends FullSubsystem {
       }
       case ALPHABOT -> {
         maxVelocity.initDefault(12.0);
-        kP.initDefault(3500.0);
-        kD.initDefault(150.0);
+        kP.initDefault(2000.0);
+        kD.initDefault(50.0);
         kA.initDefault(0.0);
       }
       case SIMBOT -> {
@@ -191,6 +195,15 @@ public class Turret extends FullSubsystem {
     turretIO.applyOutputs(outputs);
   }
 
+  private void setFieldRelativeTarget(Rotation2d angle, double velocity) {
+    this.goalAngle = angle;
+    this.goalVelocity = velocity;
+  }
+
+  private void zero() {
+    turretOffset = -inputs.positionRads;
+  }
+
   @AutoLogOutput(key = "Turret/MeasuredPositionRad")
   public double getPosition() {
     return inputs.positionRads + turretOffset;
@@ -201,13 +214,34 @@ public class Turret extends FullSubsystem {
     return inputs.velocityRadsPerSec;
   }
 
-  public void setFieldRelativeTarget(Rotation2d angle, double velocity) {
-    this.goalAngle = angle;
-    this.goalVelocity = velocity;
+  public Command runTrackTargetCommand() {
+    return run(
+        () -> {
+          var params = ShotCalculator.getInstance().getParameters();
+          setFieldRelativeTarget(params.turretAngle(), params.turretVelocity());
+          setShootState(ShootState.TRACKING);
+        });
   }
 
-  public void zero() {
-    turretOffset = -inputs.positionRads;
+  public Command runTrackTargetActiveShootingCommand() {
+    return run(
+        () -> {
+          var params = ShotCalculator.getInstance().getParameters();
+          setFieldRelativeTarget(params.turretAngle(), params.turretVelocity());
+          setShootState(ShootState.ACTIVE_SHOOTING);
+        });
+  }
+
+  public Command runFixedCommand(Supplier<Rotation2d> angle, DoubleSupplier velocity) {
+    return run(
+        () -> {
+          setFieldRelativeTarget(angle.get(), velocity.getAsDouble());
+          setShootState(ShootState.TRACKING);
+        });
+  }
+
+  public Command zeroCommand() {
+    return runOnce(this::zero).ignoringDisable(true);
   }
 
   public enum ShootState {

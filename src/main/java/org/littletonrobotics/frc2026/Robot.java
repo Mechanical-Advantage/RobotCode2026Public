@@ -31,6 +31,7 @@ import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2026.Constants.Mode;
 import org.littletonrobotics.frc2026.Constants.RobotType;
 import org.littletonrobotics.frc2026.subsystems.leds.Leds;
+import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.VirtualSubsystem;
@@ -222,6 +223,9 @@ public class Robot extends LoggedRobot {
       lowBatteryAlert.set(true);
       Leds.getGlobal().lowBatteryAlert = true;
     }
+
+    // Clear shooting parameters
+    ShotCalculator.getInstance().clearShootingParameters();
 
     // Update RobotContainer dashboard outputs
     robotContainer.updateDashboardOutputs();

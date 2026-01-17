@@ -10,6 +10,7 @@ package org.littletonrobotics.frc2026;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Filesystem;
 import java.io.IOException;
@@ -27,6 +28,8 @@ public class FieldConstants {
   public static final int aprilTagCount = AprilTagLayoutType.OFFICIAL.getLayout().getTags().size();
   public static final double aprilTagWidth = Units.inchesToMeters(6.5);
   public static final AprilTagLayoutType defaultAprilTagType = AprilTagLayoutType.OFFICIAL;
+
+  public static final Translation2d hubCenter = new Translation2d(4.6256194, 4.0346376);
 
   @Getter
   public enum AprilTagLayoutType {

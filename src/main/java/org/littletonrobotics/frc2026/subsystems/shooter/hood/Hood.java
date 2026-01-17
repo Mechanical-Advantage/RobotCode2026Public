@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.hood;
+package org.littletonrobotics.frc2026.subsystems.shooter.hood;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
@@ -15,13 +15,16 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
+import java.util.function.DoubleSupplier;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.littletonrobotics.frc2026.AlphaMechanism3d;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Robot;
-import org.littletonrobotics.frc2026.subsystems.hood.HoodIO.HoodIOOutputMode;
-import org.littletonrobotics.frc2026.subsystems.hood.HoodIO.HoodIOOutputs;
+import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
+import org.littletonrobotics.frc2026.subsystems.shooter.hood.HoodIO.HoodIOOutputMode;
+import org.littletonrobotics.frc2026.subsystems.shooter.hood.HoodIO.HoodIOOutputs;
 import org.littletonrobotics.frc2026.util.EqualsUtil;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
@@ -155,7 +158,7 @@ public class Hood extends FullSubsystem {
     io.applyOutputs(outputs);
   }
 
-  public void setGoalParams(double angle, double velocity) {
+  private void setGoalParams(double angle, double velocity) {
     goalAngle = angle;
     goalVelocity = velocity;
   }
@@ -165,7 +168,23 @@ public class Hood extends FullSubsystem {
     return inputs.positionRads + hoodOffset;
   }
 
-  public void zero() {
+  private void zero() {
     hoodOffset = minAngle - inputs.positionRads;
+  }
+
+  public Command runTrackTargetCommand() {
+    return run(
+        () -> {
+          var params = ShotCalculator.getInstance().getParameters();
+          setGoalParams(params.hoodAngle(), params.hoodVelocity());
+        });
+  }
+
+  public Command runFixedCommand(DoubleSupplier angle, DoubleSupplier velocity) {
+    return run(() -> setGoalParams(angle.getAsDouble(), velocity.getAsDouble()));
+  }
+
+  public Command zeroCommand() {
+    return runOnce(this::zero).ignoringDisable(true);
   }
 }
