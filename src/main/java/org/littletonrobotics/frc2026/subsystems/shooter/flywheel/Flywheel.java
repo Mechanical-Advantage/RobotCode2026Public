@@ -30,6 +30,9 @@ public class Flywheel extends FullSubsystem {
   private final Alert disconnected;
 
   public static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS");
+  public static final LoggedTunableNumber kV = new LoggedTunableNumber("Flywheel/kV");
+  public static final LoggedTunableNumber kVMaxVelocity =
+      new LoggedTunableNumber("Flywheel/kVMaxVelocity");
   public static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP");
   public static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD");
   private static final LoggedTunableNumber rateLimiter =
@@ -39,20 +42,25 @@ public class Flywheel extends FullSubsystem {
   static {
     switch (Constants.robot) {
       case COMPBOT -> {
-        rateLimiter.initDefault(100);
+        rateLimiter.initDefault(300);
         kS.initDefault(0.0);
+        kV.initDefault(0.0);
+        kVMaxVelocity.initDefault(0.0);
         kP.initDefault(0.0);
         kD.initDefault(0.0);
       }
       case ALPHABOT -> {
-        rateLimiter.initDefault(300);
-        kS.initDefault(0.0);
+        rateLimiter.initDefault(800.0);
+        kS.initDefault(10.0);
+        kV.initDefault(0.065);
+        kVMaxVelocity.initDefault(113.0);
         kP.initDefault(10.0);
         kD.initDefault(0.0);
       }
       default -> {
         rateLimiter.initDefault(0.0);
         kS.initDefault(0.0);
+        kV.initDefault(0.0);
         kP.initDefault(0.0);
         kD.initDefault(0.0);
       }
@@ -92,7 +100,9 @@ public class Flywheel extends FullSubsystem {
   private void runVelocity(double velocityRadsPerSec) {
     outputs.coast = false;
     outputs.velocityRadsPerSec = slewRateLimiter.calculate(velocityRadsPerSec);
-    outputs.feedForward = kS.get() * Math.signum(velocityRadsPerSec);
+    outputs.feedForward =
+        kS.get() * Math.signum(velocityRadsPerSec)
+            + kV.get() * Math.min(velocityRadsPerSec, kVMaxVelocity.get());
 
     // Log flywheel setpoint
     Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);

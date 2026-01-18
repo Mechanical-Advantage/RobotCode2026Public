@@ -10,8 +10,9 @@ package org.littletonrobotics.frc2026.subsystems.shooter.turret;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -45,6 +46,8 @@ public class Turret extends FullSubsystem {
 
   private static final LoggedTunableNumber maxVelocity =
       new LoggedTunableNumber("Turret/MaxVelocity");
+  private static final LoggedTunableNumber maxAcceleration =
+      new LoggedTunableNumber("Turret/MaxAcceleration", 9999999);
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Turret/kP");
   private static final LoggedTunableNumber kD = new LoggedTunableNumber("Turret/kD");
   private static final LoggedTunableNumber kA = new LoggedTunableNumber("Turret/kA");
@@ -58,9 +61,9 @@ public class Turret extends FullSubsystem {
         kA.initDefault(0.0);
       }
       case ALPHABOT -> {
-        maxVelocity.initDefault(12.0);
-        kP.initDefault(2000.0);
-        kD.initDefault(50.0);
+        maxVelocity.initDefault(16.0);
+        kP.initDefault(3500.0);
+        kD.initDefault(150.0);
         kA.initDefault(0.0);
       }
       case SIMBOT -> {
@@ -93,8 +96,12 @@ public class Turret extends FullSubsystem {
       new Alert("Turret motor disconnected!", Alert.AlertType.kWarning);
   @Setter private BooleanSupplier coastOverride = () -> false;
 
-  SlewRateLimiter profile = new SlewRateLimiter(maxVelocity.get());
+  TrapezoidProfile profile =
+      new TrapezoidProfile(
+          new TrapezoidProfile.Constraints(maxVelocity.get(), maxAcceleration.get()));
+  @Getter private State setpoint = new State();
   private double turretOffset;
+  private boolean turretZeroed = false;
 
   public Turret(TurretIO turretIO) {
     this.turretIO = turretIO;
@@ -108,7 +115,7 @@ public class Turret extends FullSubsystem {
         Robot.showHardwareAlerts() && !motorConnectedDebouncer.calculate(inputs.motorConnected));
 
     // Stop when disabled
-    if (DriverStation.isDisabled()) {
+    if (DriverStation.isDisabled() || !turretZeroed) {
       outputs.mode = TurretIOOutputMode.BRAKE;
 
       if (coastOverride.getAsBoolean()) {
@@ -118,19 +125,25 @@ public class Turret extends FullSubsystem {
 
     // Update profile constraints
     if (maxVelocity.hasChanged(hashCode())) {
-      profile = new SlewRateLimiter(maxVelocity.get());
+      profile =
+          new TrapezoidProfile(
+              new TrapezoidProfile.Constraints(maxVelocity.get(), maxAcceleration.get()));
     }
 
-    // Reset profile when disabled
+    // Update lastGoalAngle & reset setpoint
     if (DriverStation.isDisabled()) {
-      profile.reset(getPosition());
+
+      setpoint = new State(inputs.positionRads, 0.0);
       lastGoalAngle = getPosition();
     }
 
     // Publish position
-    RobotState.getInstance()
-        .addTurretObservation(
-            new RobotState.TurretObservation(Timer.getTimestamp(), new Rotation2d(getPosition())));
+    if (turretZeroed) {
+      RobotState.getInstance()
+          .addTurretObservation(
+              new RobotState.TurretObservation(
+                  Timer.getTimestamp(), new Rotation2d(getPosition())));
+    }
 
     // Visualize turret in 3D
     AlphaMechanism3d.getMeasured().setTurretAngle(new Rotation2d(getPosition()));
@@ -141,8 +154,8 @@ public class Turret extends FullSubsystem {
 
   @Override
   public void periodicAfterScheduler() {
-    // Delay tracking math until after the RobotState has been updated
-    if (DriverStation.isEnabled()) {
+    // Delay tracking math until after the RobotState has been updated & turret zeroed
+    if (DriverStation.isEnabled() && turretZeroed) {
       Rotation2d robotAngle = RobotState.getInstance().getRotation();
       double robotAngularVelocity =
           RobotState.getInstance().getFieldVelocity().omegaRadiansPerSecond;
@@ -178,15 +191,19 @@ public class Turret extends FullSubsystem {
       }
       lastGoalAngle = bestAngle;
 
-      double setpoint = profile.calculate(MathUtil.clamp(bestAngle, minLegalAngle, maxLegalAngle));
+      State goalState =
+          new State(
+              MathUtil.clamp(bestAngle, minLegalAngle, maxLegalAngle), robotRelativeGoalVelocity);
+
+      setpoint = profile.calculate(Constants.loopPeriodSecs, setpoint, goalState);
       Logger.recordOutput("Turret/GoalPositionRad", bestAngle);
       Logger.recordOutput("Turret/GoalVelocityRadPerSec", robotRelativeGoalVelocity);
-      Logger.recordOutput("Turret/SetpointPositionRad", setpoint);
-      Logger.recordOutput("Turret/SetpointVelocityRadPerSec", robotRelativeGoalVelocity);
+      Logger.recordOutput("Turret/SetpointPositionRad", setpoint.position);
+      Logger.recordOutput("Turret/SetpointVelocityRadPerSec", setpoint.velocity);
 
       outputs.mode = TurretIOOutputMode.CLOSED_LOOP;
-      outputs.position = setpoint - turretOffset;
-      outputs.velocity = robotRelativeGoalVelocity;
+      outputs.position = setpoint.position - turretOffset;
+      outputs.velocity = setpoint.velocity;
       outputs.kP = kP.get();
       outputs.kD = kD.get();
     }
@@ -202,6 +219,7 @@ public class Turret extends FullSubsystem {
 
   private void zero() {
     turretOffset = -inputs.positionRads;
+    turretZeroed = true;
   }
 
   @AutoLogOutput(key = "Turret/MeasuredPositionRad")

@@ -131,6 +131,10 @@ public class RobotContainer {
     if (turret == null) {
       turret = new Turret(new TurretIO() {});
     }
+    if (kicker == null) {
+      kicker = new Kicker(new RollerSystemIO() {}, new RollerSystemIO() {});
+    }
+
     if (vision == null) {
       switch (Constants.robot) {
         case COMPBOT -> vision = new Vision(this::getSelectedAprilTagLayout);
@@ -154,6 +158,7 @@ public class RobotContainer {
     // Set default commands
     hood.setDefaultCommand(hood.runTrackTargetCommand());
     turret.setDefaultCommand(turret.runTrackTargetCommand());
+    flywheel.setDefaultCommand(flywheel.runTrackTargetCommand());
   }
 
   /** Create the bindings between buttons and commands. */
@@ -184,13 +189,11 @@ public class RobotContainer {
                 Commands.startEnd(
                     () -> hopper.setGoal(Hopper.Goal.OUTTAKE),
                     () -> hopper.setGoal(Hopper.Goal.STOP),
-                    hopper)));
-    primary
-        .leftBumper()
-        .whileTrue(
-            flywheel
-                .runTrackTargetCommand()
-                .alongWith(turret.runTrackTargetActiveShootingCommand()));
+                    hopper),
+                Commands.startEnd(
+                    () -> kicker.setGoal(Kicker.Goal.OUTTAKE),
+                    () -> kicker.setGoal(Kicker.Goal.STOP),
+                    kicker)));
     primary
         .leftClaw()
         .whileTrue(
@@ -211,7 +214,8 @@ public class RobotContainer {
                 Commands.startEnd(
                     () -> kicker.setGoal(Kicker.Goal.SHOOT),
                     () -> kicker.setGoal(Kicker.Goal.STOP),
-                    kicker)));
+                    kicker),
+                turret.runTrackTargetActiveShootingCommand()));
 
     // ***** SECONDARY CONTROLLER *****
 

@@ -7,6 +7,7 @@
 
 package org.littletonrobotics.frc2026.subsystems.shooter;
 
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -24,6 +25,11 @@ import org.littletonrobotics.junction.Logger;
 public class ShotCalculator {
   private static ShotCalculator instance;
   private static Transform2d robotToTurret = new Transform2d();
+
+  private final LinearFilter turretAngleFilter =
+      LinearFilter.movingAverage((int) (0.1 / Constants.loopPeriodSecs));
+  private final LinearFilter hoodAngleFilter =
+      LinearFilter.movingAverage((int) (0.1 / Constants.loopPeriodSecs));
 
   private Rotation2d lastTurretAngle;
   private double lastHoodAngle;
@@ -55,15 +61,27 @@ public class ShotCalculator {
       new InterpolatingDoubleTreeMap();
 
   static {
-    shotHoodAngleMap.put(1.8122, Rotation2d.fromDegrees(20.0));
-    shotHoodAngleMap.put(2.612079, Rotation2d.fromDegrees(25.0));
-    shotHoodAngleMap.put(3.75661, Rotation2d.fromDegrees(30.0));
-    shotHoodAngleMap.put(4.96786, Rotation2d.fromDegrees(35.0));
+    shotHoodAngleMap.put(1.45, Rotation2d.fromDegrees(19.0));
+    shotHoodAngleMap.put(1.75, Rotation2d.fromDegrees(21.0));
+    shotHoodAngleMap.put(2.15, Rotation2d.fromDegrees(22.0));
+    shotHoodAngleMap.put(2.50, Rotation2d.fromDegrees(23.0));
+    shotHoodAngleMap.put(2.84, Rotation2d.fromDegrees(24.0));
+    shotHoodAngleMap.put(3.15, Rotation2d.fromDegrees(25.5));
+    shotHoodAngleMap.put(3.58, Rotation2d.fromDegrees(26.5));
+    shotHoodAngleMap.put(4.16, Rotation2d.fromDegrees(29.0));
+    shotHoodAngleMap.put(4.43, Rotation2d.fromDegrees(30.5));
+    shotHoodAngleMap.put(5.28, Rotation2d.fromDegrees(34.0));
 
-    shotFlywheelSpeedMap.put(1.8122, 200.0);
-    shotFlywheelSpeedMap.put(2.612079, 210.0);
-    shotFlywheelSpeedMap.put(3.75661, 230.0);
-    shotFlywheelSpeedMap.put(4.96786, 260.0);
+    shotFlywheelSpeedMap.put(1.45, 175.0);
+    shotFlywheelSpeedMap.put(1.75, 185.0);
+    shotFlywheelSpeedMap.put(2.15, 190.0);
+    shotFlywheelSpeedMap.put(2.50, 200.0);
+    shotFlywheelSpeedMap.put(2.84, 210.0);
+    shotFlywheelSpeedMap.put(3.15, 218.0);
+    shotFlywheelSpeedMap.put(3.58, 222.0);
+    shotFlywheelSpeedMap.put(4.16, 230.0);
+    shotFlywheelSpeedMap.put(4.43, 235.0);
+    shotFlywheelSpeedMap.put(5.28, 250.0);
 
     timeOfFlightMap.put(1.64227, 0.93);
     timeOfFlightMap.put(2.859544, 1.0);
@@ -110,8 +128,10 @@ public class ShotCalculator {
     if (lastTurretAngle == null) lastTurretAngle = turretAngle;
     if (Double.isNaN(lastHoodAngle)) lastHoodAngle = hoodAngle;
     turretVelocity =
-        (turretAngle.getRadians() - lastTurretAngle.getRadians()) / Constants.loopPeriodSecs;
-    hoodVelocity = (hoodAngle - lastHoodAngle) / Constants.loopPeriodSecs;
+        turretAngleFilter.calculate(
+            turretAngle.minus(lastTurretAngle).getRadians() / Constants.loopPeriodSecs);
+    hoodVelocity =
+        hoodAngleFilter.calculate((hoodAngle - lastHoodAngle) / Constants.loopPeriodSecs);
     lastTurretAngle = turretAngle;
     lastHoodAngle = hoodAngle;
     latestParameters =

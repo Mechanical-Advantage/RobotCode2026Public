@@ -58,8 +58,7 @@ public class HoodIOSim implements HoodIO {
       }
       case CLOSED_LOOP -> {
         currentOutput =
-            outputs.feedforward
-                + (sim.getAngleRads() - outputs.positionRad) * outputs.kP
+            (sim.getAngleRads() - outputs.positionRad) * outputs.kP
                 + (sim.getVelocityRadPerSec() - outputs.velocityRadsPerSec) * outputs.kD;
         currentControl = true;
       }
