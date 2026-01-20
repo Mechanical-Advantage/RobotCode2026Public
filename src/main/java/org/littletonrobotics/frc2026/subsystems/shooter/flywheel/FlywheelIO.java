@@ -21,12 +21,15 @@ public interface FlywheelIO {
     public double tempCelsius;
   }
 
+  public static enum FlywheelIOOutputMode {
+    COAST,
+    DUTY_CYCLE_BANG_BANG,
+    TORQUE_CURRENT_BANG_BANG
+  }
+
   public static class FlywheelIOOutputs {
+    public FlywheelIOOutputMode mode = FlywheelIOOutputMode.COAST;
     public double velocityRadsPerSec = 0.0;
-    public double feedForward = 0.0;
-    public boolean coast = true;
-    public double kP = 0.0;
-    public double kD = 0.0;
   }
 
   default void updateInputs(FlywheelIOInputs inputs) {}

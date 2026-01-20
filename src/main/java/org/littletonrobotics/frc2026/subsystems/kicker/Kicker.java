@@ -16,8 +16,10 @@ import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.AutoLogOutput;
 
 public class Kicker extends FullSubsystem {
-  private static final LoggedTunableNumber rollerIntakeVolts =
-      new LoggedTunableNumber("Kicker/Roller/IntakeVolts", 12.0);
+  private static final LoggedTunableNumber rollerIntakeFrontVolts =
+      new LoggedTunableNumber("Kicker/Roller/IntakeFrontVolts", 10.0);
+  private static final LoggedTunableNumber rollerIntakeBackVolts =
+      new LoggedTunableNumber("Kicker/Roller/IntakeBackVolts", 6.0);
   private static final LoggedTunableNumber rollerOuttakeVolts =
       new LoggedTunableNumber("Kicker/Roller/OuttakeVolts", -12.0);
 
@@ -32,25 +34,28 @@ public class Kicker extends FullSubsystem {
   }
 
   public void periodic() {
-
     rollerFront.periodic();
     rollerBack.periodic();
 
-    double rollerVolts = 0.0;
+    double rollerFrontVolts = 0.0;
+    double rollerBackVolts = 0.0;
     switch (goal) {
       case SHOOT -> {
-        rollerVolts = rollerIntakeVolts.get();
+        rollerFrontVolts = rollerIntakeFrontVolts.get();
+        rollerBackVolts = rollerIntakeBackVolts.get();
       }
 
       case OUTTAKE -> {
-        rollerVolts = rollerOuttakeVolts.get();
+        rollerFrontVolts = rollerOuttakeVolts.get();
+        rollerBackVolts = rollerOuttakeVolts.get();
       }
       case STOP -> {
-        rollerVolts = 0.0;
+        rollerFrontVolts = 0.0;
+        rollerBackVolts = 0.0;
       }
     }
-    rollerFront.setVolts(rollerVolts);
-    rollerBack.setVolts(rollerVolts);
+    rollerFront.setVolts(rollerFrontVolts);
+    rollerBack.setVolts(rollerBackVolts);
   }
 
   @Override

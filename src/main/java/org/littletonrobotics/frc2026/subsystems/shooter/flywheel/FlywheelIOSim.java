@@ -46,10 +46,10 @@ public class FlywheelIOSim implements FlywheelIO {
 
   @Override
   public void applyOutputs(FlywheelIOOutputs outputs) {
-    if (outputs.coast) {
-      currentOutput = 0.0;
-    } else {
-      currentOutput = controller.calculate(outputs.velocityRadsPerSec);
-    }
+    // if (outputs.coast) {
+    //   currentOutput = 0.0;
+    // } else {
+    //   currentOutput = controller.calculate(outputs.velocityRadsPerSec);
+    // }
   }
 }

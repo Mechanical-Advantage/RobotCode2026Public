@@ -32,6 +32,7 @@ import org.littletonrobotics.frc2026.subsystems.leds.Leds;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIOHAL;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO;
+import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
 import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.Flywheel;
 import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.FlywheelIO;
 import org.littletonrobotics.frc2026.subsystems.shooter.hood.Hood;
@@ -213,6 +214,7 @@ public class RobotContainer {
         .rightBumper()
         .negate()
         .whileTrue(turret.runTrackTargetActiveShootingCommand())
+        .and(() -> ShotCalculator.getInstance().getParameters().isValid())
         .and(hood::atGoal)
         .and(flywheel::atGoal)
         .and(turret::atGoal)
