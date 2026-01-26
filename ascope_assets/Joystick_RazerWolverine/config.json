@@ -1,0 +1,239 @@
+{
+  "name": "Razer Wolverine",
+  "components": [
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": true,
+      "centerPx": [
+        2200,
+        961
+      ],
+      "sizePx": [
+        170,
+        170
+      ],
+      "sourceIndex": 1
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": true,
+      "centerPx": [
+        2370,
+        791
+      ],
+      "sizePx": [
+        170,
+        170
+      ],
+      "sourceIndex": 2
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": true,
+      "centerPx": [
+        2030,
+        791
+      ],
+      "sizePx": [
+        170,
+        170
+      ],
+      "sourceIndex": 3
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": true,
+      "centerPx": [
+        2200,
+        621
+      ],
+      "sizePx": [
+        170,
+        170
+      ],
+      "sourceIndex": 4
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        807,
+        312
+      ],
+      "sizePx": [
+        400,
+        120
+      ],
+      "sourceIndex": 5
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        2208,
+        312
+      ],
+      "sizePx": [
+        430,
+        120
+      ],
+      "sourceIndex": 6
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        1102,
+        252
+      ],
+      "sizePx": [
+        190,
+        90
+      ],
+      "sourceIndex": 7
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        1898,
+        252
+      ],
+      "sizePx": [
+        190,
+        90
+      ],
+      "sourceIndex": 8
+    },
+    {
+      "type": "axis",
+      "isYellow": true,
+      "centerPx": [
+        807,
+        192
+      ],
+      "sizePx": [
+        400,
+        120
+      ],
+      "sourceIndex": 2,
+      "sourceRange": [
+        0,
+        1
+      ]
+    },
+    {
+      "type": "axis",
+      "isYellow": true,
+      "centerPx": [
+        2208,
+        192
+      ],
+      "sizePx": [
+        430,
+        120
+      ],
+      "sourceIndex": 3,
+      "sourceRange": [
+        0,
+        1
+      ]
+    },
+    {
+      "type": "joystick",
+      "isYellow": true,
+      "centerPx": [
+        803,
+        791
+      ],
+      "radiusPx": 140,
+      "xSourceIndex": 0,
+      "xSourceInverted": false,
+      "ySourceIndex": 1,
+      "ySourceInverted": true,
+      "buttonSourceIndex": 9
+    },
+    {
+      "type": "joystick",
+      "isYellow": true,
+      "centerPx": [
+        1872,
+        1178
+      ],
+      "radiusPx": 140,
+      "xSourceIndex": 4,
+      "xSourceInverted": false,
+      "ySourceIndex": 5,
+      "ySourceInverted": true,
+      "buttonSourceIndex": 10
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        730,
+        1280
+      ],
+      "sizePx": [
+        150,
+        200
+      ],
+      "sourceIndex": 0,
+      "sourcePov": "up"
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        730,
+        1480
+      ],
+      "sizePx": [
+        150,
+        200
+      ],
+      "sourceIndex": 0,
+      "sourcePov": "down"
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        2270,
+        1280
+      ],
+      "sizePx": [
+        150,
+        200
+      ],
+      "sourceIndex": 0,
+      "sourcePov": "left"
+    },
+    {
+      "type": "button",
+      "isYellow": true,
+      "isEllipse": false,
+      "centerPx": [
+        2270,
+        1480
+      ],
+      "sizePx": [
+        150,
+        200
+      ],
+      "sourceIndex": 0,
+      "sourcePov": "right"
+    }
+  ]
+}

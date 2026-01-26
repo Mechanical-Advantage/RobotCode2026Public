@@ -1,0 +1,1 @@
+6328's CoreML object detection models for Rebuilt can be found [here](https://drive.google.com/drive/folders/1RSenY_GqtcOwZGjLOdw1ZsV7P-LiMSiP?usp=share_link), and are available under an AGPL-3.0 license located in the same folder.

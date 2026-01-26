@@ -1,0 +1,58 @@
+// Copyright (c) 2025-2026 Littleton Robotics
+// http://github.com/Mechanical-Advantage
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file at
+// the root directory of this project.
+
+package org.littletonrobotics.frc2026.util;
+
+import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Command;
+import java.util.function.DoubleSupplier;
+
+/**
+ * A command that does nothing but takes a specified amount of time to finish. Unlike the built-in
+ * WaitCommand, this class accepts a supplier for the duration (especially useful when combined with
+ * LoggedTunableNumber).
+ */
+public class SuppliedWaitCommand extends Command {
+  protected Timer timer = new Timer();
+  private final DoubleSupplier m_duration;
+
+  /**
+   * Creates a new WaitCommand. This command will do nothing, and end after the specified duration.
+   *
+   * @param seconds A supplier for the time to wait, in seconds
+   */
+  public SuppliedWaitCommand(DoubleSupplier seconds) {
+    m_duration = seconds;
+  }
+
+  @Override
+  public void initialize() {
+    timer.restart();
+  }
+
+  @Override
+  public void end(boolean interrupted) {
+    timer.stop();
+  }
+
+  @Override
+  public boolean isFinished() {
+    return timer.hasElapsed(m_duration.getAsDouble());
+  }
+
+  @Override
+  public boolean runsWhenDisabled() {
+    return true;
+  }
+
+  @Override
+  public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
+    builder.addDoubleProperty("duration", () -> m_duration.getAsDouble(), null);
+  }
+}

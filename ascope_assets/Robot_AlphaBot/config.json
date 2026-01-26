@@ -1,0 +1,80 @@
+{
+  "name": "Alpha Bot",
+  "isFTC": false,
+  "position": [
+    0.0,
+    0.0,
+    0.045
+  ],
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "z",
+      "degrees": 90
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Northstar 0",
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": -22.5
+        }
+      ],
+      "position": [
+        -0.3282696,
+        0.0,
+        0.7170674
+      ],
+      "resolution": [
+        1600,
+        1200
+      ],
+      "fov": 66.62
+    }
+  ],
+  "components": [
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [
+        0.197,
+        0.0,
+        -0.395
+      ]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "z",
+          "degrees": -90
+        },
+        {
+          "axis": "y",
+          "degrees": 20
+        }
+      ],
+      "zeroedPosition": [
+        -0.255,
+        0.0,
+        -0.427
+      ]
+    }
+  ]
+}
