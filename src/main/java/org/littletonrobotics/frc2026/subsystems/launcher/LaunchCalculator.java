@@ -5,9 +5,9 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.shooter;
+package org.littletonrobotics.frc2026.subsystems.launcher;
 
-import static org.littletonrobotics.frc2026.subsystems.shooter.ShooterConstants.*;
+import static org.littletonrobotics.frc2026.subsystems.launcher.LauncherConstants.*;
 
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -27,8 +27,8 @@ import org.littletonrobotics.frc2026.util.geometry.GeomUtil;
 import org.littletonrobotics.junction.Logger;
 
 @ExtensionMethod({GeomUtil.class})
-public class ShotCalculator {
-  private static ShotCalculator instance;
+public class LaunchCalculator {
+  private static LaunchCalculator instance;
 
   private final LinearFilter turretAngleFilter =
       LinearFilter.movingAverage((int) (0.1 / Constants.loopPeriodSecs));
@@ -42,12 +42,12 @@ public class ShotCalculator {
   private double turretVelocity;
   private double hoodVelocity;
 
-  public static ShotCalculator getInstance() {
-    if (instance == null) instance = new ShotCalculator();
+  public static LaunchCalculator getInstance() {
+    if (instance == null) instance = new LaunchCalculator();
     return instance;
   }
 
-  public record ShootingParameters(
+  public record LaunchingParameters(
       boolean isValid,
       Rotation2d turretAngle,
       double turretVelocity,
@@ -56,14 +56,14 @@ public class ShotCalculator {
       double flywheelSpeed) {}
 
   // Cache parameters
-  private ShootingParameters latestParameters = null;
+  private LaunchingParameters latestParameters = null;
 
   private static double minDistance;
   private static double maxDistance;
   private static double phaseDelay;
-  private static final InterpolatingTreeMap<Double, Rotation2d> shotHoodAngleMap =
+  private static final InterpolatingTreeMap<Double, Rotation2d> launchHoodAngleMap =
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Rotation2d::interpolate);
-  private static final InterpolatingDoubleTreeMap shotFlywheelSpeedMap =
+  private static final InterpolatingDoubleTreeMap launchFlywheelSpeedMap =
       new InterpolatingDoubleTreeMap();
   private static final InterpolatingDoubleTreeMap timeOfFlightMap =
       new InterpolatingDoubleTreeMap();
@@ -73,27 +73,27 @@ public class ShotCalculator {
     maxDistance = 5.60;
     phaseDelay = 0.03;
 
-    shotHoodAngleMap.put(1.34, Rotation2d.fromDegrees(19.0));
-    shotHoodAngleMap.put(1.78, Rotation2d.fromDegrees(19.0));
-    shotHoodAngleMap.put(2.17, Rotation2d.fromDegrees(24.0));
-    shotHoodAngleMap.put(2.81, Rotation2d.fromDegrees(27.0));
-    shotHoodAngleMap.put(3.82, Rotation2d.fromDegrees(29.0));
-    shotHoodAngleMap.put(4.09, Rotation2d.fromDegrees(30.0));
-    shotHoodAngleMap.put(4.40, Rotation2d.fromDegrees(31.0));
-    shotHoodAngleMap.put(4.77, Rotation2d.fromDegrees(32.0));
-    shotHoodAngleMap.put(5.57, Rotation2d.fromDegrees(32.0));
-    shotHoodAngleMap.put(5.60, Rotation2d.fromDegrees(35.0));
+    launchHoodAngleMap.put(1.34, Rotation2d.fromDegrees(19.0));
+    launchHoodAngleMap.put(1.78, Rotation2d.fromDegrees(19.0));
+    launchHoodAngleMap.put(2.17, Rotation2d.fromDegrees(24.0));
+    launchHoodAngleMap.put(2.81, Rotation2d.fromDegrees(27.0));
+    launchHoodAngleMap.put(3.82, Rotation2d.fromDegrees(29.0));
+    launchHoodAngleMap.put(4.09, Rotation2d.fromDegrees(30.0));
+    launchHoodAngleMap.put(4.40, Rotation2d.fromDegrees(31.0));
+    launchHoodAngleMap.put(4.77, Rotation2d.fromDegrees(32.0));
+    launchHoodAngleMap.put(5.57, Rotation2d.fromDegrees(32.0));
+    launchHoodAngleMap.put(5.60, Rotation2d.fromDegrees(35.0));
 
-    shotFlywheelSpeedMap.put(1.34, 210.0);
-    shotFlywheelSpeedMap.put(1.78, 220.0);
-    shotFlywheelSpeedMap.put(2.17, 220.0);
-    shotFlywheelSpeedMap.put(2.81, 230.0);
-    shotFlywheelSpeedMap.put(3.82, 250.0);
-    shotFlywheelSpeedMap.put(4.09, 255.0);
-    shotFlywheelSpeedMap.put(4.40, 260.0);
-    shotFlywheelSpeedMap.put(4.77, 265.0);
-    shotFlywheelSpeedMap.put(5.57, 275.0);
-    shotFlywheelSpeedMap.put(5.60, 290.0);
+    launchFlywheelSpeedMap.put(1.34, 210.0);
+    launchFlywheelSpeedMap.put(1.78, 220.0);
+    launchFlywheelSpeedMap.put(2.17, 220.0);
+    launchFlywheelSpeedMap.put(2.81, 230.0);
+    launchFlywheelSpeedMap.put(3.82, 250.0);
+    launchFlywheelSpeedMap.put(4.09, 255.0);
+    launchFlywheelSpeedMap.put(4.40, 260.0);
+    launchFlywheelSpeedMap.put(4.77, 265.0);
+    launchFlywheelSpeedMap.put(5.57, 275.0);
+    launchFlywheelSpeedMap.put(5.60, 290.0);
 
     timeOfFlightMap.put(5.68, 1.16);
     timeOfFlightMap.put(4.55, 1.12);
@@ -102,7 +102,7 @@ public class ShotCalculator {
     timeOfFlightMap.put(1.38, 0.90);
   }
 
-  public ShootingParameters getParameters() {
+  public LaunchingParameters getParameters() {
     if (latestParameters != null) {
       return latestParameters;
     }
@@ -154,7 +154,7 @@ public class ShotCalculator {
 
     // Calculate parameters accounted for imparted velocity
     turretAngle = target.minus(lookaheadPose.getTranslation()).getAngle();
-    hoodAngle = shotHoodAngleMap.get(lookaheadTurretToTargetDistance).getRadians();
+    hoodAngle = launchHoodAngleMap.get(lookaheadTurretToTargetDistance).getRadians();
     if (lastTurretAngle == null) lastTurretAngle = turretAngle;
     if (Double.isNaN(lastHoodAngle)) lastHoodAngle = hoodAngle;
     turretVelocity =
@@ -165,23 +165,23 @@ public class ShotCalculator {
     lastTurretAngle = turretAngle;
     lastHoodAngle = hoodAngle;
     latestParameters =
-        new ShootingParameters(
+        new LaunchingParameters(
             lookaheadTurretToTargetDistance >= minDistance
                 && lookaheadTurretToTargetDistance <= maxDistance,
             turretAngle,
             turretVelocity,
             hoodAngle,
             hoodVelocity,
-            shotFlywheelSpeedMap.get(lookaheadTurretToTargetDistance));
+            launchFlywheelSpeedMap.get(lookaheadTurretToTargetDistance));
 
     // Log calculated values
-    Logger.recordOutput("ShotCalculator/LookaheadPose", lookaheadPose);
-    Logger.recordOutput("ShotCalculator/TurretToTargetDistance", lookaheadTurretToTargetDistance);
+    Logger.recordOutput("LaunchCalculator/LookaheadPose", lookaheadPose);
+    Logger.recordOutput("LaunchCalculator/TurretToTargetDistance", lookaheadTurretToTargetDistance);
 
     return latestParameters;
   }
 
-  public void clearShootingParameters() {
+  public void clearLaunchingParameters() {
     latestParameters = null;
   }
 }

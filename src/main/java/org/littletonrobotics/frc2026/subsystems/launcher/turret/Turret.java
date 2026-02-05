@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.shooter.turret;
+package org.littletonrobotics.frc2026.subsystems.launcher.turret;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
@@ -28,9 +28,9 @@ import org.littletonrobotics.frc2026.AlphaMechanism3d;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Robot;
 import org.littletonrobotics.frc2026.RobotState;
-import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
-import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIO.TurretIOOutputMode;
-import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
+import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
+import org.littletonrobotics.frc2026.subsystems.launcher.turret.TurretIO.TurretIOOutputMode;
+import org.littletonrobotics.frc2026.subsystems.launcher.turret.TurretIO.TurretIOOutputs;
 import org.littletonrobotics.frc2026.util.EqualsUtil;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
@@ -87,7 +87,7 @@ public class Turret extends FullSubsystem {
   private final TurretIOInputsAutoLogged inputs = new TurretIOInputsAutoLogged();
   private final TurretIOOutputs outputs = new TurretIOOutputs();
 
-  @Getter @Setter @AutoLogOutput private ShootState shootState = ShootState.ACTIVE_SHOOTING;
+  @Getter @Setter @AutoLogOutput private LaunchState launchState = LaunchState.ACTIVE_LAUNCHING;
   private Rotation2d goalAngle = Rotation2d.kZero;
   private double goalVelocity = 0.0;
   private double lastGoalAngle = 0.0;
@@ -172,13 +172,13 @@ public class Turret extends FullSubsystem {
       boolean hasBestAngle = false;
       double bestAngle = 0;
       double minLegalAngle =
-          switch (shootState) {
-            case ACTIVE_SHOOTING -> minAngle;
+          switch (launchState) {
+            case ACTIVE_LAUNCHING -> minAngle;
             case TRACKING -> trackMinAngle;
           };
       double maxLegalAngle =
-          switch (shootState) {
-            case ACTIVE_SHOOTING -> maxAngle;
+          switch (launchState) {
+            case ACTIVE_LAUNCHING -> maxAngle;
             case TRACKING -> trackMaxAngle;
           };
       for (int i = -2; i < 3; i++) {
@@ -244,18 +244,18 @@ public class Turret extends FullSubsystem {
   public Command runTrackTargetCommand() {
     return run(
         () -> {
-          var params = ShotCalculator.getInstance().getParameters();
+          var params = LaunchCalculator.getInstance().getParameters();
           setFieldRelativeTarget(params.turretAngle(), params.turretVelocity());
-          setShootState(ShootState.TRACKING);
+          setLaunchState(LaunchState.TRACKING);
         });
   }
 
-  public Command runTrackTargetActiveShootingCommand() {
+  public Command runTrackTargetActiveLaunchingCommand() {
     return run(
         () -> {
-          var params = ShotCalculator.getInstance().getParameters();
+          var params = LaunchCalculator.getInstance().getParameters();
           setFieldRelativeTarget(params.turretAngle(), params.turretVelocity());
-          setShootState(ShootState.ACTIVE_SHOOTING);
+          setLaunchState(LaunchState.ACTIVE_LAUNCHING);
         });
   }
 
@@ -263,7 +263,7 @@ public class Turret extends FullSubsystem {
     return run(
         () -> {
           setFieldRelativeTarget(angle.get(), velocity.getAsDouble());
-          setShootState(ShootState.TRACKING);
+          setLaunchState(LaunchState.TRACKING);
         });
   }
 
@@ -271,8 +271,8 @@ public class Turret extends FullSubsystem {
     return runOnce(this::zero).ignoringDisable(true);
   }
 
-  public enum ShootState {
-    ACTIVE_SHOOTING,
+  public enum LaunchState {
+    ACTIVE_LAUNCHING,
     TRACKING
   }
 }

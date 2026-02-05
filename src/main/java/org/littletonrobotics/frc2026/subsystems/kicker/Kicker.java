@@ -40,7 +40,7 @@ public class Kicker extends FullSubsystem {
     double rollerFrontVolts = 0.0;
     double rollerBackVolts = 0.0;
     switch (goal) {
-      case SHOOT -> {
+      case LAUNCH -> {
         rollerFrontVolts = rollerIntakeFrontVolts.get();
         rollerBackVolts = rollerIntakeBackVolts.get();
       }
@@ -65,7 +65,7 @@ public class Kicker extends FullSubsystem {
   }
 
   public enum Goal {
-    SHOOT,
+    LAUNCH,
     OUTTAKE,
     STOP
   }

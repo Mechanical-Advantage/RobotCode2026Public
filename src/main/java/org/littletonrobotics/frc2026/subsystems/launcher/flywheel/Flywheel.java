@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.shooter.flywheel;
+package org.littletonrobotics.frc2026.subsystems.launcher.flywheel;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -15,9 +15,9 @@ import java.util.function.DoubleSupplier;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.littletonrobotics.frc2026.Robot;
-import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
-import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputMode;
-import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputs;
+import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
+import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIO.FlywheelIOOutputMode;
+import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIO.FlywheelIOOutputs;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -46,7 +46,7 @@ public class Flywheel extends FullSubsystem {
       new Debouncer(torqueCurrentControlDebounce.get(), DebounceType.kFalling);
   private Debouncer atGoalDebouncer = new Debouncer(atGoalDebounce.get(), DebounceType.kFalling);
   private boolean lastTorqueCurrentControl = false;
-  @AutoLogOutput private long shotCount = 0;
+  @AutoLogOutput private long lanchCount = 0;
 
   @Getter
   @Accessors(fluent = true)
@@ -95,7 +95,7 @@ public class Flywheel extends FullSubsystem {
     atGoal = atGoalDebouncer.calculate(inTolerance);
 
     if (!torqueCurrentControl && lastTorqueCurrentControl) {
-      shotCount++;
+      lanchCount++;
     }
     lastTorqueCurrentControl = torqueCurrentControl;
 
@@ -121,7 +121,7 @@ public class Flywheel extends FullSubsystem {
 
   public Command runTrackTargetCommand() {
     return runEnd(
-        () -> runVelocity(ShotCalculator.getInstance().getParameters().flywheelSpeed()),
+        () -> runVelocity(LaunchCalculator.getInstance().getParameters().flywheelSpeed()),
         this::stop);
   }
 

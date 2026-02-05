@@ -31,18 +31,18 @@ import org.littletonrobotics.frc2026.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2026.subsystems.hopper.Hopper;
 import org.littletonrobotics.frc2026.subsystems.intake.Intake;
 import org.littletonrobotics.frc2026.subsystems.kicker.Kicker;
+import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
+import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.Flywheel;
+import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.hood.Hood;
+import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.turret.Turret;
+import org.littletonrobotics.frc2026.subsystems.launcher.turret.TurretIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.turret.TurretIOSim;
 import org.littletonrobotics.frc2026.subsystems.leds.Leds;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIOHAL;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO;
-import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
-import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.Flywheel;
-import org.littletonrobotics.frc2026.subsystems.shooter.flywheel.FlywheelIO;
-import org.littletonrobotics.frc2026.subsystems.shooter.hood.Hood;
-import org.littletonrobotics.frc2026.subsystems.shooter.hood.HoodIO;
-import org.littletonrobotics.frc2026.subsystems.shooter.turret.Turret;
-import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIO;
-import org.littletonrobotics.frc2026.subsystems.shooter.turret.TurretIOSim;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
 import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
@@ -221,23 +221,23 @@ public class RobotContainer {
                 .alongWith(
                     hood.runFixedCommand(
                         () -> Units.degreesToRadians(presetHoodAngleDegrees.get()), () -> 0.0),
-                    turret.runTrackTargetActiveShootingCommand()));
+                    turret.runTrackTargetActiveLaunchingCommand()));
     primary
         .rightBumper()
         .negate()
-        .whileTrue(turret.runTrackTargetActiveShootingCommand())
-        .and(() -> ShotCalculator.getInstance().getParameters().isValid())
+        .whileTrue(turret.runTrackTargetActiveLaunchingCommand())
+        .and(() -> LaunchCalculator.getInstance().getParameters().isValid())
         .and(hood::atGoal)
         .and(flywheel::atGoal)
         .and(turret::atGoal)
         .whileTrueContinuous(
             Commands.parallel(
                 Commands.startEnd(
-                    () -> hopper.setGoal(Hopper.Goal.SHOOT),
+                    () -> hopper.setGoal(Hopper.Goal.LAUNCH),
                     () -> hopper.setGoal(Hopper.Goal.STOP),
                     hopper),
                 Commands.startEnd(
-                    () -> kicker.setGoal(Kicker.Goal.SHOOT),
+                    () -> kicker.setGoal(Kicker.Goal.LAUNCH),
                     () -> kicker.setGoal(Kicker.Goal.STOP),
                     kicker)))
         .onFalse(

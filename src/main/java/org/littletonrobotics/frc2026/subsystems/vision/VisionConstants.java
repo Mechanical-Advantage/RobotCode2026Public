@@ -7,7 +7,7 @@
 
 package org.littletonrobotics.frc2026.subsystems.vision;
 
-import static org.littletonrobotics.frc2026.subsystems.shooter.ShooterConstants.turretToCamera;
+import static org.littletonrobotics.frc2026.subsystems.launcher.LauncherConstants.turretToCamera;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -20,7 +20,7 @@ import lombok.Builder;
 import lombok.experimental.ExtensionMethod;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.RobotState;
-import org.littletonrobotics.frc2026.subsystems.shooter.ShooterConstants;
+import org.littletonrobotics.frc2026.subsystems.launcher.LauncherConstants;
 import org.littletonrobotics.frc2026.util.geometry.GeomUtil;
 
 @ExtensionMethod({GeomUtil.class})
@@ -49,7 +49,7 @@ public class VisionConstants {
                           return Optional.empty();
                         } else {
                           return Optional.of(
-                              ShooterConstants.robotToTurret
+                              LauncherConstants.robotToTurret
                                   .toPose3d()
                                   .transformBy(
                                       new Transform3d(

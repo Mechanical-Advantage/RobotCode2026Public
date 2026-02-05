@@ -15,7 +15,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
-import org.littletonrobotics.frc2026.subsystems.shooter.ShooterConstants;
+import org.littletonrobotics.frc2026.subsystems.launcher.LauncherConstants;
 import org.littletonrobotics.frc2026.util.geometry.GeomUtil;
 import org.littletonrobotics.junction.Logger;
 
@@ -36,7 +36,7 @@ public class AlphaMechanism3d {
   /** Log the component poses and camera pose. */
   public void log(String key) {
     var turretPose =
-        ShooterConstants.robotToTurret
+        LauncherConstants.robotToTurret
             .toPose3d()
             .transformBy(
                 new Transform3d(
@@ -50,7 +50,7 @@ public class AlphaMechanism3d {
     var cameraPose =
         new Pose3d(RobotState.getInstance().getEstimatedPose())
             .transformBy(turretPose.toTransform3d())
-            .transformBy(ShooterConstants.turretToCamera);
+            .transformBy(LauncherConstants.turretToCamera);
     Logger.recordOutput(key + "/CameraPose", cameraPose);
   }
 }

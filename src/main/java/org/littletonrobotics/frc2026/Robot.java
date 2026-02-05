@@ -30,8 +30,8 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2026.Constants.Mode;
 import org.littletonrobotics.frc2026.Constants.RobotType;
+import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
 import org.littletonrobotics.frc2026.subsystems.leds.Leds;
-import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.VirtualSubsystem;
@@ -75,7 +75,8 @@ public class Robot extends LoggedRobot {
           default -> "Unknown";
         });
     try {
-      Logger.recordMetadata("Hostname", InetAddress.getLocalHost().getHostName());
+      Logger.recordMetadata(
+          "Hostname", InetAddress.getLocalHost().getHostName().replaceAll("\\.local$", ""));
     } catch (UnknownHostException e) {
       Logger.recordMetadata("Hostname", "Unknown");
     }
@@ -224,8 +225,8 @@ public class Robot extends LoggedRobot {
       Leds.getGlobal().lowBatteryAlert = true;
     }
 
-    // Clear shooting parameters
-    ShotCalculator.getInstance().clearShootingParameters();
+    // Clear launching parameters
+    LaunchCalculator.getInstance().clearLaunchingParameters();
 
     // Update RobotContainer dashboard outputs
     robotContainer.updateDashboardOutputs();

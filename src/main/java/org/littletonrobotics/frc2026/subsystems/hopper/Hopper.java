@@ -16,16 +16,16 @@ import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.AutoLogOutput;
 
 public class Hopper extends FullSubsystem {
-  private static final LoggedTunableNumber rollerShootVolts =
-      new LoggedTunableNumber("Hopper/Roller/ShootVolts", 12.0);
+  private static final LoggedTunableNumber rollerLaunchVolts =
+      new LoggedTunableNumber("Hopper/Roller/LaunchVolts", 12.0);
   private static final LoggedTunableNumber rollerOuttakeVolts =
       new LoggedTunableNumber("Hopper/Roller/OuttakeVolts", -12.0);
-  private static final LoggedTunableNumber leftIndexerShootVolts =
-      new LoggedTunableNumber("Hopper/Indexer/LeftShootVolts", 6.0);
+  private static final LoggedTunableNumber leftIndexerLaunchVolts =
+      new LoggedTunableNumber("Hopper/Indexer/LeftLaunchVolts", 6.0);
   private static final LoggedTunableNumber leftIndexerOuttakeVolts =
       new LoggedTunableNumber("Hopper/Indexer/LeftOuttakeVolts", -6.0);
-  private static final LoggedTunableNumber rightIndexerShootVolts =
-      new LoggedTunableNumber("Hopper/Indexer/RightShootVolts", 6.0);
+  private static final LoggedTunableNumber rightIndexerLaunchVolts =
+      new LoggedTunableNumber("Hopper/Indexer/RightLaunchVolts", 6.0);
   private static final LoggedTunableNumber rightIndexerOuttakeVolts =
       new LoggedTunableNumber("Hopper/Indexer/LeftOuttakeVolts", -6.0);
 
@@ -56,10 +56,10 @@ public class Hopper extends FullSubsystem {
     double rightIndexerVolts = 0.0;
 
     switch (goal) {
-      case SHOOT -> {
-        rollerVolts = rollerShootVolts.get();
-        leftIndexerVolts = leftIndexerShootVolts.get();
-        rightIndexerVolts = rightIndexerShootVolts.get();
+      case LAUNCH -> {
+        rollerVolts = rollerLaunchVolts.get();
+        leftIndexerVolts = leftIndexerLaunchVolts.get();
+        rightIndexerVolts = rightIndexerLaunchVolts.get();
       }
       case OUTTAKE -> {
         rollerVolts = rollerOuttakeVolts.get();
@@ -85,7 +85,7 @@ public class Hopper extends FullSubsystem {
   }
 
   public enum Goal {
-    SHOOT,
+    LAUNCH,
     OUTTAKE,
     STOP
   }

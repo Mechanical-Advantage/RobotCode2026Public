@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2026.subsystems.shooter.hood;
+package org.littletonrobotics.frc2026.subsystems.launcher.hood;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
@@ -19,9 +19,9 @@ import java.util.function.DoubleSupplier;
 import lombok.Setter;
 import org.littletonrobotics.frc2026.AlphaMechanism3d;
 import org.littletonrobotics.frc2026.Robot;
-import org.littletonrobotics.frc2026.subsystems.shooter.ShotCalculator;
-import org.littletonrobotics.frc2026.subsystems.shooter.hood.HoodIO.HoodIOOutputMode;
-import org.littletonrobotics.frc2026.subsystems.shooter.hood.HoodIO.HoodIOOutputs;
+import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
+import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIO.HoodIOOutputMode;
+import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIO.HoodIOOutputs;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
@@ -133,7 +133,7 @@ public class Hood extends FullSubsystem {
   public Command runTrackTargetCommand() {
     return run(
         () -> {
-          var params = ShotCalculator.getInstance().getParameters();
+          var params = LaunchCalculator.getInstance().getParameters();
           setGoalParams(params.hoodAngle(), params.hoodVelocity());
         });
   }
