@@ -175,18 +175,18 @@ public class FieldConstants {
     // Relevant reference points on alliance side
     public static final Translation2d nearLeftCorner =
         new Translation2d(LinesVertical.hubCenter + width / 2, Units.inchesToMeters(255));
-    public static final Translation2d nearRightCorner = Hub.nearLeftCorner;
+    public static final Translation2d nearRightCorner = Hub.nearRightCorner;
     public static final Translation2d farLeftCorner =
         new Translation2d(LinesVertical.hubCenter - width / 2, Units.inchesToMeters(255));
-    public static final Translation2d farRightCorner = Hub.farLeftCorner;
+    public static final Translation2d farRightCorner = Hub.farRightCorner;
 
     // Relevant reference points on opposing side
     public static final Translation2d oppNearLeftCorner =
         new Translation2d(LinesVertical.hubCenter + width / 2, Units.inchesToMeters(255));
-    public static final Translation2d oppNearRightCorner = Hub.oppNearLeftCorner;
+    public static final Translation2d oppNearRightCorner = Hub.oppNearRightCorner;
     public static final Translation2d oppFarLeftCorner =
         new Translation2d(LinesVertical.hubCenter - width / 2, Units.inchesToMeters(255));
-    public static final Translation2d oppFarRightCorner = Hub.oppFarLeftCorner;
+    public static final Translation2d oppFarRightCorner = Hub.oppFarRightCorner;
   }
 
   /** Left Trench related constants */

@@ -59,8 +59,8 @@ public class FlywheelIOSim implements FlywheelIO {
     if (outputs.mode == FlywheelIOOutputMode.COAST) {
       currentOutput = 0.0;
     } else {
-      currentOutput = controller.calculate(lastVelocity);
       controller.setSetpoint(outputs.velocityRadsPerSec);
+      currentOutput = controller.calculate(lastVelocity);
     }
   }
 }

@@ -1,0 +1,22 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = [
+    # Hardware-bound workers — require live camera and ML accelerator
+    "*/apriltag_worker.py",
+    "*/objdetect_worker.py",
+    # USB device enumeration via OS APIs
+    "*/reenumerate/*",
+    # macOS IOKit hardware control
+    "*/ns-iokit-ctl/*",
+    # Camera capture (Basler pypylon / AVFoundation)
+    "*/pipeline/Capture.py",
+    # Object detection (CoreML/ONNX inference on live frames)
+    "*/pipeline/ObjectDetector.py",
+    # NT/stream output — integration tested only
+    "*/output/OutputPublisher.py",
+    "*/output/StreamServer.py",
+    "*/output/VideoWriter.py",
+]
