@@ -39,7 +39,7 @@ dev = [
 hub_counter = "hub_counter.__main__:main"
 
 [tool.setuptools.packages.find]
-where = ["hub_counter"]
+where = ["."]
 
 [tool.setuptools.package-data]
 hub_counter = ["web/static/*"]

@@ -5,27 +5,28 @@
 # license that can be found in the LICENSE file at
 # the root directory of this project.
 
-import argparse
-import queue
-import sys
-import threading
-import time
-from typing import List, Tuple, Union
-
-import ntcore
-from apriltag_worker import apriltag_worker
-from calibration.CalibrationCommandSource import CalibrationCommandSource, NTCalibrationCommandSource
-from calibration.CalibrationSession import CalibrationSession
-from config.config import ConfigStore, LocalConfig, RemoteConfig
-from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
-from objdetect_worker import objdetect_worker
-from output.OutputPublisher import NTOutputPublisher, OutputPublisher
-from output.StreamServer import MjpegServer, StreamServer
-from output.overlay_util import *
-from output.VideoWriter import FFmpegVideoWriter, VideoWriter
-from pipeline.Capture import CAPTURE_IMPLS
-
 if __name__ == "__main__":
+    import argparse
+    import queue
+    import sys
+    import threading
+    import time
+    from typing import List, Tuple, Union
+
+    import ntcore
+    from apriltag_worker import apriltag_worker
+    from calibration.CalibrationCommandSource import CalibrationCommandSource, NTCalibrationCommandSource
+    from calibration.CalibrationSession import CalibrationSession
+    from config.config import ConfigStore, LocalConfig, RemoteConfig
+    from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
+    from objdetect_worker import objdetect_worker
+    from output.OutputPublisher import NTOutputPublisher, OutputPublisher
+    from output.StreamServer import MjpegServer, StreamServer
+    from output.overlay_util import *
+    from output.VideoWriter import FFmpegVideoWriter, VideoWriter
+    from pipeline.Capture import CAPTURE_IMPLS
+
+    # fmt: skip
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.json")
     parser.add_argument("--calibration", default="calibration.json")

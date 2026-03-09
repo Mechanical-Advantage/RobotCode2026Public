@@ -1,6 +1,12 @@
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Add northstar root to sys.path so local modules (config/, pipeline/, etc.)
+# are importable before test files run. importlib mode avoids auto-importing
+# northstar/__init__.py which requires ntcore, pypylon, and other hardware libs
+# not available in CI.
+pythonpath = ["."]
+addopts = "--import-mode=importlib"
 
 [tool.coverage.run]
 omit = [
