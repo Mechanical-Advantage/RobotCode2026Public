@@ -47,3 +47,15 @@ hub_counter = ["web/static/*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = [
+    # Application entry point and full async app wiring — not unit-testable
+    "hub_counter/__main__.py",
+    "hub_counter/app.py",
+    # Live NetworkTables client — requires robot connection
+    "hub_counter/network/nt_client.py",
+    # GPIO hardware drivers — require physical Raspberry Pi hardware
+    "hub_counter/gpio/channel_monitor.py",
+    "hub_counter/gpio/mock_gpio.py",
+]
