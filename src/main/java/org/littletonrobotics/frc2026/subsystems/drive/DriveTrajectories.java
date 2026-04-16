@@ -508,7 +508,7 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farLeftCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5, 0)),
+                                            DriveConstants.fullWidthX / 2.0 + 0.27, 0)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .build(),
@@ -519,8 +519,8 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farRightCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.8,
-                                            -DriveConstants.fullWidthX / 2.0)),
+                                            DriveConstants.fullWidthX / 2.0 + 0.27,
+                                            -DriveConstants.fullWidthX / 2.0 + 0.2)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .keepInLaneWidth(0.08)
@@ -662,14 +662,23 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LinesVertical.neutralZoneNear
                                         + DriveConstants.fullWidthX
-                                        + 1.1,
-                                    FieldConstants.fieldWidth / 2.0 - DriveConstants.fullBaseRadius,
-                                    Rotation2d.fromDegrees(-32.5)))
+                                        + 0.2,
+                                    FieldConstants.fieldWidth / 2.0
+                                        - DriveConstants.fullBaseRadius / 2.0
+                                        + 0.1,
+                                    Rotation2d.fromDegrees(-30)))
                             .build(),
+
+                        // Turn into center
                         PathWaypoint.from(
                                 new Pose2d(
-                                    FieldConstants.fieldCenter.plus(new Translation2d(0.0, 0.0)),
-                                    Rotation2d.fromDegrees(90)))
+                                    FieldConstants.fieldCenter.plus(new Translation2d(-0.5, -0.5)),
+                                    Rotation2d.fromDegrees(27)))
+                            .build(),
+
+                        // Intake through center
+                        PathWaypoint.from(
+                                new Pose2d(FieldConstants.fieldCenter, Rotation2d.fromDegrees(90)))
                             .build(),
                         PathWaypoint.from(
                                 new Pose2d(
