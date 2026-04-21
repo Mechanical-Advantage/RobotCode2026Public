@@ -176,6 +176,8 @@ public class FieldConstants {
         new Translation3d(LinesVertical.hubCenter, fieldWidth, openingHeight);
     public static final Translation3d openingTopRight =
         new Translation3d(LinesVertical.hubCenter, fieldWidth - openingWidth, openingHeight);
+    public static final Translation2d center =
+        openingTopLeft.toTranslation2d().interpolate(openingTopRight.toTranslation2d(), 0.5);
   }
 
   public static class RightTrench {
@@ -192,6 +194,8 @@ public class FieldConstants {
         new Translation3d(LinesVertical.hubCenter, openingWidth, openingHeight);
     public static final Translation3d openingTopRight =
         new Translation3d(LinesVertical.hubCenter, 0, openingHeight);
+    public static final Translation2d center =
+        openingTopLeft.toTranslation2d().interpolate(openingTopRight.toTranslation2d(), 0.5);
   }
 
   /** Tower related constants */

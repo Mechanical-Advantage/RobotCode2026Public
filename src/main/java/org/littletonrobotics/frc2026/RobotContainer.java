@@ -446,7 +446,8 @@ public class RobotContainer {
                     Commands.startEnd(
                         () -> kicker.setGoal(Kicker.Goal.OUTTAKE),
                         () -> kicker.setGoal(Kicker.Goal.STOP),
-                        kicker))
+                        kicker),
+                    flywheel.runFixedCommand(() -> -50.0, false))
                 .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
 
     // Outpost preset
@@ -762,7 +763,7 @@ public class RobotContainer {
                         () -> slamtake.setIntakeGoal(IntakeGoal.INTAKE),
                         () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
                         slamtake)))
-        .whileTrue(Commands.waitSeconds(1.5).andThen(flywheel.runBangBangTrackTargetCommand()));
+        .whileTrue(Commands.waitSeconds(1.5).andThen(flywheel.runTrackTargetCommand()));
 
     // Force trash compactor up in neutral zone during auto
     RobotModeTriggers.autonomous()

@@ -172,10 +172,12 @@ gversion {
 // Create commit with working changes on event branches
 task(eventDeploy) {
     doLast {
-        if (project.gradle.startParameter.taskNames.any({ it.toLowerCase().contains("deploy") })) {
-            def branchPrefix = "event"
+        if (project.gradle.startParameter.taskNames.any({ it.toLowerCase().contains('deploy') })) {
+            def branchPrefix = 'event'
             def branch = 'git branch --show-current'.execute().text.trim()
-            def commitMessage = "Update at '${new Date().toString()}'"
+            def formatter = new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss z')
+            formatter.setTimeZone(java.util.TimeZone.getTimeZone('America/New_York'))
+            def commitMessage = "Update at '${formatter.format(new Date())}'"
 
             if (branch.startsWith(branchPrefix)) {
                 exec {
@@ -190,13 +192,13 @@ task(eventDeploy) {
                     ignoreExitValue = true
                 }
 
-                println "Committed to branch: '$branch'"
-                println "Commit message: '$commitMessage'"
+                println "Committed to branch: '${branch}'"
+                println "Commit message: '${commitMessage}'"
             } else {
-                println "Not on an event branch, skipping commit"
+                println 'Not on an event branch, skipping commit'
             }
         } else {
-            println "Not running deploy task, skipping commit"
+            println 'Not running deploy task, skipping commit'
         }
     }
 }

@@ -155,7 +155,8 @@ public class TrashCompactor extends FullSubsystem {
         }
         case IDLE -> {
           runAmps(0.0);
-          setpoint = new State(getMeasuredHeightMeters(), 0.0);
+          setpoint =
+              new State(MathUtil.clamp(getMeasuredHeightMeters(), minHeight, maxHeight), 0.0);
         }
       }
     }

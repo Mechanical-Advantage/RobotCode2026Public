@@ -209,7 +209,7 @@ public class Flywheel extends FullSubsystem {
     Logger.recordOutput("Flywheel/SetpointAccel", filteredAccel);
     Logger.recordOutput("Flywheel/Goal", velocityRadsPerSec);
     Logger.recordOutput("Flywheel/Feedforward", outputs.feedforward);
-    Logger.recordOutput("Flywheel/BangBag", bangBang);
+    Logger.recordOutput("Flywheel/BangBang", bangBang);
   }
 
   /** Stops the flywheel. */
@@ -237,12 +237,6 @@ public class Flywheel extends FullSubsystem {
                 LaunchCalculator.getInstance().getParameters().distanceNoLookahead()
                         > bangBangMinDistance.get()
                     && !LaunchCalculator.getInstance().getParameters().passing()),
-        this::stop);
-  }
-
-  public Command runBangBangTrackTargetCommand() {
-    return runEnd(
-        () -> runVelocity(LaunchCalculator.getInstance().getParameters().flywheelSpeed(), true),
         this::stop);
   }
 

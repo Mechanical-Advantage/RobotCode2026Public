@@ -84,14 +84,20 @@ public class Drive extends FullSubsystem {
     }
 
     // Update odometry
-    RobotState.getInstance()
-        .addOdometryObservation(
-            new OdometryObservation(
-                Timer.getTimestamp(),
-                getModulePositions(),
-                Optional.ofNullable(gyroInputs.connected ? gyroInputs.rollPosition : null),
-                Optional.ofNullable(gyroInputs.connected ? gyroInputs.pitchPosition : null),
-                Optional.ofNullable(gyroInputs.connected ? gyroInputs.yawPosition : null)));
+    boolean driveConnected = true;
+    for (var module : modules) {
+      driveConnected &= module.isConnected();
+    }
+    if (driveConnected) {
+      RobotState.getInstance()
+          .addOdometryObservation(
+              new OdometryObservation(
+                  Timer.getTimestamp(),
+                  getModulePositions(),
+                  Optional.ofNullable(gyroInputs.connected ? gyroInputs.rollPosition : null),
+                  Optional.ofNullable(gyroInputs.connected ? gyroInputs.pitchPosition : null),
+                  Optional.ofNullable(gyroInputs.connected ? gyroInputs.yawPosition : null)));
+    }
     RobotState.getInstance().setRobotVelocity(getChassisSpeeds());
 
     // Update gyro alert

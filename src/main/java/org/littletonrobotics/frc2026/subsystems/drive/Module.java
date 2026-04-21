@@ -110,6 +110,11 @@ public class Module {
     outputs.mode = ModuleIOOutputMode.COAST;
   }
 
+  /** Returns whether the motors are connected. */
+  public boolean isConnected() {
+    return inputs.driveConnected && inputs.turnConnected;
+  }
+
   /** Returns the current turn angle of the module. */
   public Rotation2d getAngle() {
     return inputs.turnPositionRads;

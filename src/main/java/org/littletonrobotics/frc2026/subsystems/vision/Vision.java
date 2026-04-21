@@ -52,6 +52,8 @@ public class Vision extends VirtualSubsystem {
   private final Timer[] disconnectedTimers;
   private final Alert[] disconnectedAlerts;
 
+  private Timer autoTimer = new Timer();
+
   public Vision(Supplier<AprilTagLayoutType> aprilTagLayoutSupplier, VisionIO... io) {
     this.aprilTagLayoutSupplier = aprilTagLayoutSupplier;
     this.io = io;
@@ -76,6 +78,7 @@ public class Vision extends VirtualSubsystem {
       disconnectedTimers[i] = new Timer();
       disconnectedTimers[i].start();
     }
+    autoTimer.start();
   }
 
   public void periodic() {
@@ -90,6 +93,11 @@ public class Vision extends VirtualSubsystem {
     double throttleFps = Robot.shouldThrottle() ? 1.0 : -1.0;
     for (var ioInst : io) {
       ioInst.setThrottleFps(throttleFps);
+    }
+
+    // Reset auto timer
+    if (!DriverStation.isAutonomousEnabled()) {
+      autoTimer.restart();
     }
 
     // Update recording state
@@ -346,9 +354,11 @@ public class Vision extends VirtualSubsystem {
     Logger.recordOutput("AprilTagVision/TagPoses", allTagPoses.toArray(Pose3d[]::new));
 
     // Send results to robot state
-    allVisionObservations.stream()
-        .sorted(Comparator.comparingDouble(VisionObservation::timestamp))
-        .forEach(RobotState.getInstance()::addVisionObservation);
+    if (!DriverStation.isAutonomousEnabled() || autoTimer.hasElapsed(autoIgnoreTimeSecs)) {
+      allVisionObservations.stream()
+          .sorted(Comparator.comparingDouble(VisionObservation::timestamp))
+          .forEach(RobotState.getInstance()::addVisionObservation);
+    }
 
     // Record cycle time
     LoggedTracer.record("Vision/Periodic");

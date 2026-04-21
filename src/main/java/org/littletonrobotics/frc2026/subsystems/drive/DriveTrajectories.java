@@ -94,7 +94,7 @@ public class DriveTrajectories {
                 PathRequestSegment.builder()
                     .waypoints(
                         // Magical intermediate
-                        PathWaypoint.from(new Pose2d(7.87, 5.96, Rotation2d.fromRadians(-1.1)))
+                        PathWaypoint.from(new Pose2d(7.87, 5.96, Rotation2d.fromDegrees(-90.0)))
                             .build(),
                         // Fuel pool interior intermediate
                         PathWaypoint.from(
@@ -110,7 +110,7 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.fieldCenter.plus(
                                         new Translation2d(-DriveConstants.fullWidthX / 2.0, 0.0)),
-                                    Rotation2d.fromDegrees(-95)))
+                                    Rotation2d.fromDegrees(-115)))
                             .build())
                     .maxVelocity(1.8)
                     .build());
@@ -125,8 +125,9 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.FuelPool.nearLeftCorner.plus(
-                                        new Translation2d(-0.1, DriveConstants.fullWidthX / 2.0)),
-                                    Rotation2d.fromDegrees(-45)))
+                                        new Translation2d(
+                                            -0.1, DriveConstants.fullWidthX / 2.0 + 0.3)),
+                                    Rotation2d.fromDegrees(-90)))
                             .build())
                     .build())
             .segments(neutralZoneSweepConservative.build().segments)
@@ -390,9 +391,12 @@ public class DriveTrajectories {
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
+                        // Return from bump
                         PathWaypoint.from(
                                 new Pose2d(Launch.leftBump.getTranslation(), Rotation2d.kCCW_Pi_2))
                             .build(),
+
+                        // Back up
                         PathWaypoint.from(
                                 Launch.leftBump.getTranslation().plus(new Translation2d(-0.3, 0.5)))
                             .build())
@@ -400,9 +404,11 @@ public class DriveTrajectories {
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
+                        // Start curve into trench
                         PathWaypoint.from(
                                 Launch.leftBump.getTranslation().plus(new Translation2d(-0.3, 1.2)))
                             .build(),
+                        // Prepare to enter trench
                         PathWaypoint.from(Trench.leftEntry).build())
                     .pointAt(hubTarget)
                     .maxVelocity(0.6)
@@ -410,8 +416,16 @@ public class DriveTrajectories {
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
+                        // Approximate end of LOTM, start turning under trench
                         PathWaypoint.from(
                                 new Pose2d(Trench.leftBeforeBar, Rotation2d.fromDegrees(68)))
+                            .build(),
+                        // Force turn before through trench
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftTrench.center.plus(
+                                        new Translation2d(0.15, 0.0)),
+                                    Rotation2d.kZero))
                             .build(),
                         PathWaypoint.from(new Pose2d(Trench.leftClear, Rotation2d.kZero)).build())
                     .keepInLaneWidth(0.03)
@@ -508,7 +522,7 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farLeftCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.27, 0)),
+                                            DriveConstants.fullWidthX / 2.0 + 0.5, 0)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .build(),
@@ -519,7 +533,7 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farRightCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.27,
+                                            DriveConstants.fullWidthX / 2.0 + 0.5,
                                             -DriveConstants.fullWidthX / 2.0 + 0.2)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
@@ -683,7 +697,7 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.fieldCenter.plus(new Translation2d(0.0, 1.2)),
-                                    Rotation2d.fromDegrees(90)))
+                                    Rotation2d.fromDegrees(120)))
                             .build())
                     .build());
 
@@ -717,7 +731,7 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.fieldCenter.plus(new Translation2d(0.0, 1.5)),
-                                    Rotation2d.fromDegrees(90)))
+                                    Rotation2d.fromDegrees(120)))
                             .build())
                     .build());
 
@@ -782,7 +796,11 @@ public class DriveTrajectories {
                 PathRequestSegment.builder()
                     .waypoints(
                         // Starting line
-                        PathWaypoint.from(new Pose2d(Trench.leftStart, Rotation2d.fromDegrees(-90)))
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Trench.leftStart.minus(
+                                        new Translation2d(DriveConstants.fullWidthX, 0.0)),
+                                    Rotation2d.fromDegrees(-90)))
                             .build())
                     .build())
             .segments(depotLeftToRight.build().segments);

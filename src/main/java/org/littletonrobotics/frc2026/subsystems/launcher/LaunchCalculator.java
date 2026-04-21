@@ -98,7 +98,7 @@ public class LaunchCalculator {
   public static final double towerPresetDistance = 2.5;
   public static final double trenchPresetDistance = 3.03;
   public static final double outpostPresetDistance = 4.84;
-  public static final double passingPresetDistance = 7.0;
+  public static final double passingPresetDistance = 5.5;
   public static final LaunchPreset passingPreset;
   public static final LaunchPreset towerPreset;
   public static final LaunchPreset trenchPreset;
@@ -117,7 +117,7 @@ public class LaunchCalculator {
   public static final LoggedTunableNumber idleSpeed =
       new LoggedTunableNumber("LaunchCalculator/IdleSpeed", 80);
   public static final LoggedTunableNumber linearDragTimeConstant =
-      new LoggedTunableNumber("LaunchCalculator/LinearDragTimeConstant", 0.45);
+      new LoggedTunableNumber("LaunchCalculator/LinearDragTimeConstant", 0.375);
 
   public static record LaunchPreset(
       LoggedTunableNumber hoodAngleDeg, LoggedTunableNumber flywheelSpeed) {}
@@ -147,7 +147,7 @@ public class LaunchCalculator {
   static {
     minDistance = 0.6;
     maxDistance = 5.3;
-    passingMinDistance = 5.4;
+    passingMinDistance = 3.0;
     passingMaxDistance = 17.16;
     phaseDelay = 0.03;
 

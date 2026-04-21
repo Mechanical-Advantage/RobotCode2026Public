@@ -138,7 +138,7 @@ public class AutoCommands {
                   1.0);
 
           double xPosition = AllianceFlipUtil.applyX(currentPose.getX());
-          if (xPosition < FieldConstants.LinesVertical.neutralZoneNear + 0.5) {
+          if (xPosition < FieldConstants.LinesVertical.neutralZoneNear + 1.0) {
             t = 0.0;
           }
 
@@ -152,8 +152,10 @@ public class AutoCommands {
           var targetRotation =
               xPosition < FieldConstants.LinesVertical.starting - DriveConstants.fullWidthX / 2.0
                   ? target.getRotation()
-                  : AllianceFlipUtil.apply(
-                      Rotation2d.fromDegrees(leftBump.getAsBoolean() ? 90 : -90));
+                  : xPosition
+                          < FieldConstants.LinesVertical.neutralZoneNear + DriveConstants.fullWidthX
+                      ? AllianceFlipUtil.apply(Rotation2d.kPi)
+                      : targetTranslation.minus(currentPose.getTranslation()).getAngle();
           return new Pose2d(targetTranslation, targetRotation);
         });
   }
