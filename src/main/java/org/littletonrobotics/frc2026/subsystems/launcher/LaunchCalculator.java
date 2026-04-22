@@ -37,7 +37,7 @@ import org.littletonrobotics.junction.Logger;
 public class LaunchCalculator {
   private static LaunchCalculator instance;
 
-  @Getter private double hoodAngleOffsetDeg = 0.0;
+  @Getter private double flywheelSpeedOffsetRadsPerSec = 0.0;
 
   private final LinearFilter hoodAngleFilter =
       LinearFilter.movingAverage((int) (0.1 / Constants.loopPeriodSecs));
@@ -358,9 +358,9 @@ public class LaunchCalculator {
                     <= (passing ? passingMaxDistance : maxDistance),
             driveAngle,
             driveVelocity,
-            hoodAngle + Units.degreesToRadians(hoodAngleOffsetDeg),
+            hoodAngle,
             hoodVelocity,
-            flywheelVelocity,
+            flywheelVelocity + flywheelSpeedOffsetRadsPerSec,
             kickerSurfaceSpeed,
             lookaheadLauncherToTargetDistance,
             launcherToTargetDistance,
@@ -434,8 +434,8 @@ public class LaunchCalculator {
         robotTranslation, getDriveAngleWithLauncherOffset(robotTranslation.toPose2d(), target));
   }
 
-  /** Adjusts the hood angle offset up or down the specified amount. */
-  public void incrementHoodAngleOffset(double incrementDegrees) {
-    hoodAngleOffsetDeg += incrementDegrees;
+  /** Adjusts the flywheel speed up or down the specified amount. */
+  public void incrementFlywheelSpeedOffset(double incrementRadsPerSec) {
+    flywheelSpeedOffsetRadsPerSec += incrementRadsPerSec;
   }
 }

@@ -18,7 +18,6 @@ import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
 import org.littletonrobotics.frc2026.Constants.RobotType;
 import org.littletonrobotics.frc2026.subsystems.launcher.LauncherConstants;
-import org.littletonrobotics.frc2026.subsystems.trashcompactor.TrashCompactor;
 import org.littletonrobotics.frc2026.subsystems.vision.VisionConstants;
 import org.littletonrobotics.frc2026.util.geometry.GeomUtil;
 import org.littletonrobotics.junction.Logger;
@@ -36,7 +35,7 @@ public class DarwinMechanism3d {
 
   @Getter @Setter private Rotation2d hoodAngle = Rotation2d.kZero;
   @Getter @Setter private Rotation2d intakeAngle = Rotation2d.kZero;
-  @Getter @Setter private double trashCompactorHeight = TrashCompactor.minHeight;
+  @Getter @Setter private double trashCompactorHeight = 0.554692;
 
   // These values may differ from VisionConstants as they are calibrated for the version of
   // the CAD exported for use in AdvantageScope, which may differ slightly from the actual robot.

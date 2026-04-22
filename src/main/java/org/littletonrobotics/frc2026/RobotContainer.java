@@ -65,9 +65,6 @@ import org.littletonrobotics.frc2026.subsystems.slamtake.SlamIOSim;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.IntakeGoal;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.SlamGoal;
-import org.littletonrobotics.frc2026.subsystems.trashcompactor.TrashCompactor;
-import org.littletonrobotics.frc2026.subsystems.trashcompactor.TrashCompactor.TrashCompactorCompactingMode;
-import org.littletonrobotics.frc2026.subsystems.trashcompactor.TrashCompactorIO;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
 import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
 import org.littletonrobotics.frc2026.util.ContinuousConditionalCommand;
@@ -91,7 +88,6 @@ public class RobotContainer {
   private Flywheel flywheel;
   private Vision vision;
   private Leds leds;
-  private TrashCompactor trashCompactor;
   private HubCounter hubCounter = new HubCounter();
 
   // Controllers
@@ -215,9 +211,6 @@ public class RobotContainer {
     if (kicker == null) {
       kicker = new Kicker(new RollerSystemIO() {}, new RollerSystemIO() {}, Optional.empty());
     }
-    if (trashCompactor == null) {
-      trashCompactor = new TrashCompactor(new TrashCompactorIO() {});
-    }
     if (vision == null) {
       switch (Constants.getRobot()) {
         case DARWIN ->
@@ -260,7 +253,6 @@ public class RobotContainer {
     hopper.setCoastOverride(() -> coastOverride);
     slamtake.setCoastOverride(() -> coastOverride);
     kicker.setCoastOverride(() -> coastOverride);
-    trashCompactor.setCoastOverride(() -> coastOverride);
     HubShiftUtil.setAllianceWinOverride(
         () -> {
           if (lostAutoOverride.getAsBoolean()) {
@@ -283,10 +275,6 @@ public class RobotContainer {
             flywheel.stopCommand(),
             flywheel.runFixedCommand(LaunchCalculator.idleSpeed, false),
             disableAutoSpinup));
-    trashCompactor.setDefaultCommand(
-        Commands.run(
-            () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.PASSIVE_DOWN),
-            trashCompactor));
   }
 
   private void configureAutos() {
@@ -379,7 +367,7 @@ public class RobotContainer {
                     () -> kicker.setGoal(Kicker.Goal.LAUNCH),
                     () -> kicker.setGoal(Kicker.Goal.STOP),
                     kicker),
-                CompactingCommands.compact(trashCompactor, slamtake)))
+                CompactingCommands.compact(slamtake)))
         .onFalse(
             Commands.startEnd(
                     () -> kicker.setGoal(Kicker.Goal.OUTTAKE),
@@ -413,7 +401,7 @@ public class RobotContainer {
                         () -> kicker.setGoal(Kicker.Goal.LAUNCH),
                         () -> kicker.setGoal(Kicker.Goal.STOP),
                         kicker),
-                    CompactingCommands.compact(trashCompactor, slamtake))
+                    CompactingCommands.compact(slamtake))
                 .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
 
     // Outtake
@@ -502,15 +490,6 @@ public class RobotContainer {
                                 LaunchCalculator.trenchPreset.hoodAngleDeg().get()),
                         () -> 0.0)));
 
-    // Raise Trash Compactor
-    primary
-        .upperRightPaddle()
-        .whileTrue(
-            Commands.runEnd(
-                () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.FORCE_MAX),
-                () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.PASSIVE_DOWN),
-                trashCompactor));
-
     // Retract intake
     primary
         .rightTrigger()
@@ -581,61 +560,37 @@ public class RobotContainer {
                                 LaunchCalculator.hoodMaxPreset.hoodAngleDeg().get()),
                         () -> 0.0)));
 
-    // Hood and slam and trash compactor run zero commands
-    secondary.x().onTrue(hood.zeroCommand().unless(secondary.b()));
-    secondary.x().onTrue(slamtake.homeSlam().unless(secondary.b()));
-    secondary.x().onTrue(trashCompactor.homeRunMin().asProxy().unless(secondary.b()));
-    secondary.x().and(secondary.b()).onTrue(trashCompactor.homeRunMax());
+    // Hood and slam run zero commands
+    secondary.x().onTrue(hood.zeroCommand().alongWith(slamtake.homeSlam()));
 
-    // Manual zero commands (hood min, slam max, trash compactor min)
-    secondary
-        .b()
-        .doublePress()
-        .onTrue(
-            hood.forceZeroCommand()
-                .alongWith(slamtake.zeroMaxSlam())
-                .alongWith(trashCompactor.zeroMinCommand()));
+    // Manual zero commands (hood min, slam max)
+    secondary.b().onTrue(hood.forceZeroCommand().alongWith(slamtake.zeroMaxSlam()));
 
-    // Hood angle offset
-    secondary
-        .povRight()
-        .whileTrue(
-            Commands.runOnce(() -> LaunchCalculator.getInstance().incrementHoodAngleOffset(0.2))
-                .andThen(
-                    Commands.waitSeconds(0.3),
-                    Commands.repeatingSequence(
-                        Commands.runOnce(
-                            () -> LaunchCalculator.getInstance().incrementHoodAngleOffset(0.2)),
-                        Commands.waitSeconds(0.1)))
-                .ignoringDisable(true));
-    secondary
-        .povLeft()
-        .whileTrue(
-            Commands.runOnce(() -> LaunchCalculator.getInstance().incrementHoodAngleOffset(-0.2))
-                .andThen(
-                    Commands.waitSeconds(0.3),
-                    Commands.repeatingSequence(
-                        Commands.runOnce(
-                            () -> LaunchCalculator.getInstance().incrementHoodAngleOffset(-0.2)),
-                        Commands.waitSeconds(0.1)))
-                .ignoringDisable(true));
-
-    // Force trash compactor
+    // Flywheel speed offset
     secondary
         .povUp()
         .whileTrue(
-            Commands.runEnd(
-                () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.FORCE_MAX),
-                () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.PASSIVE_DOWN),
-                trashCompactor));
+            Commands.runOnce(() -> LaunchCalculator.getInstance().incrementFlywheelSpeedOffset(1.0))
+                .andThen(
+                    Commands.waitSeconds(0.3),
+                    Commands.repeatingSequence(
+                        Commands.runOnce(
+                            () -> LaunchCalculator.getInstance().incrementFlywheelSpeedOffset(1.0)),
+                        Commands.waitSeconds(0.1)))
+                .ignoringDisable(true));
     secondary
         .povDown()
-        .or(primary.x())
         .whileTrue(
-            Commands.runEnd(
-                () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.FORCE_MIN),
-                () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.PASSIVE_DOWN),
-                trashCompactor));
+            Commands.runOnce(
+                    () -> LaunchCalculator.getInstance().incrementFlywheelSpeedOffset(-1.0))
+                .andThen(
+                    Commands.waitSeconds(0.3),
+                    Commands.repeatingSequence(
+                        Commands.runOnce(
+                            () ->
+                                LaunchCalculator.getInstance().incrementFlywheelSpeedOffset(-1.0)),
+                        Commands.waitSeconds(0.1)))
+                .ignoringDisable(true));
 
     // Test flywheel spin-up
     secondary
@@ -748,8 +703,7 @@ public class RobotContainer {
         .onTrue(
             hood.zeroCommand()
                 .unless(hood::isZeroed)
-                .alongWith(slamtake.homeSlam().unless(slamtake::isZeroed))
-                .alongWith(trashCompactor.homeRunMin().unless(trashCompactor::isZeroed)));
+                .alongWith(slamtake.homeSlam().unless(slamtake::isZeroed)));
 
     // Run the autonomous command for the hood during auto
     RobotModeTriggers.autonomous().whileTrue(hood.autonomousCommand());
@@ -764,21 +718,6 @@ public class RobotContainer {
                         () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
                         slamtake)))
         .whileTrue(Commands.waitSeconds(1.5).andThen(flywheel.runTrackTargetCommand()));
-
-    // Force trash compactor up in neutral zone during auto
-    RobotModeTriggers.autonomous()
-        .whileTrue(
-            Commands.run(
-                () -> {
-                  if (TrenchBounds.TrashCompactor.contains(
-                          () -> RobotState.getInstance().getEstimatedPose().getTranslation())
-                      .getAsBoolean()) {
-                    trashCompactor.setCompactingMode(TrashCompactorCompactingMode.FORCE_MIN);
-                  } else {
-                    trashCompactor.setCompactingMode(TrashCompactorCompactingMode.FORCE_MAX);
-                  }
-                },
-                trashCompactor));
 
     // Disable coast when enabling
     RobotModeTriggers.disabled()
@@ -806,9 +745,6 @@ public class RobotContainer {
 
     // Force zero intake when starting auto
     RobotModeTriggers.autonomous().onTrue(slamtake.zeroMaxSlam());
-
-    // Force zero trash compactor when starting auto
-    RobotModeTriggers.autonomous().onTrue(trashCompactor.zeroMinCommand());
   }
 
   private void configureFuelSim() {

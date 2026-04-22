@@ -12,8 +12,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.IntakeGoal;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.SlamGoal;
-import org.littletonrobotics.frc2026.subsystems.trashcompactor.TrashCompactor;
-import org.littletonrobotics.frc2026.subsystems.trashcompactor.TrashCompactor.TrashCompactorCompactingMode;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2026.util.SuppliedWaitCommand;
 
@@ -23,18 +21,14 @@ public class CompactingCommands {
 
   private CompactingCommands() {}
 
-  public static Command compact(TrashCompactor trashCompactor, Slamtake slamtake) {
-    return Commands.parallel(
-        Commands.run(
-            () -> trashCompactor.setCompactingMode(TrashCompactorCompactingMode.LAUNCHING),
-            trashCompactor),
-        new SuppliedWaitCommand(slamLaunchDelay)
-            .andThen(
-                Commands.runOnce(() -> slamtake.setSlamGoal(SlamGoal.RETRACT_SLOW)),
-                Commands.runEnd(
-                        () -> slamtake.setIntakeGoal(IntakeGoal.INTAKE),
-                        () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
-                        slamtake)
-                    .asProxy()));
+  public static Command compact(Slamtake slamtake) {
+    return new SuppliedWaitCommand(slamLaunchDelay)
+        .andThen(
+            Commands.runOnce(() -> slamtake.setSlamGoal(SlamGoal.RETRACT_SLOW)),
+            Commands.runEnd(
+                    () -> slamtake.setIntakeGoal(IntakeGoal.INTAKE),
+                    () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
+                    slamtake)
+                .asProxy());
   }
 }
