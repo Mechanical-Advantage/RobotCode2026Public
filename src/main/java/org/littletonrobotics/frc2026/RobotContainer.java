@@ -315,9 +315,19 @@ public class RobotContainer {
 
     // Characterization
     autoSelector.addRoutine(
-        "Combobulated Salesman", DriveCommands.feedforwardCharacterization(drive));
+        "Combobulated Salesman",
+        DriveCommands.feedforwardCharacterization(drive)
+            .deadlineFor(
+                flywheel.stopCommand(),
+                Commands.run(() -> slamtake.setIntakeGoal(IntakeGoal.STOP), slamtake))
+            .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
     autoSelector.addRoutine(
-        "Discombobulated Salesman", DriveCommands.wheelRadiusCharacterization(drive));
+        "Discombobulated Salesman",
+        DriveCommands.wheelRadiusCharacterization(drive)
+            .deadlineFor(
+                flywheel.stopCommand(),
+                Commands.run(() -> slamtake.setIntakeGoal(IntakeGoal.STOP), slamtake))
+            .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
   }
 
   /** Create the bindings between buttons and commands. */
@@ -593,10 +603,7 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Test flywheel spin-up
-    secondary
-        .leftBumper()
-        .whileTrue(flywheel.runFixedCommand(() -> 200.0, false))
-        .onFalse(flywheel.stopCommand());
+    secondary.leftBumper().whileTrue(flywheel.runFixedCommand(() -> 200.0, false));
 
     // ****** OVERRIDE SWITCHES *****
 

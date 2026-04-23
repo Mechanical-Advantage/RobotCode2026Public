@@ -245,6 +245,6 @@ public class Flywheel extends FullSubsystem {
   }
 
   public Command stopCommand() {
-    return runOnce(this::stop);
+    return run(this::stop);
   }
 }
