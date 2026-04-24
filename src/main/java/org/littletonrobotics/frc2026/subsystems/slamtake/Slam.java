@@ -73,6 +73,9 @@ public class Slam {
       outputs.kP = kP.get();
       outputs.kD = kD.get();
     }
+  }
+
+  public void periodicAfterScheduler() {
 
     // Stop when disabled
     if (DriverStation.isDisabled()) {
@@ -82,9 +85,7 @@ public class Slam {
         outputs.mode = SlamIOOutputMode.COAST;
       }
     }
-  }
 
-  public void periodicAfterScheduler() {
     io.applyOutputs(outputs);
   }
 

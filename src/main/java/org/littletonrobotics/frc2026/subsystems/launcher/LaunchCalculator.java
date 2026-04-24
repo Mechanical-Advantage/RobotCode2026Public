@@ -37,7 +37,7 @@ import org.littletonrobotics.junction.Logger;
 public class LaunchCalculator {
   private static LaunchCalculator instance;
 
-  @Getter private double flywheelSpeedOffsetRadsPerSec = 0.0;
+  @Getter private double flywheelSpeedOffsetRadsPerSec = -5.0;
 
   private final LinearFilter hoodAngleFilter =
       LinearFilter.movingAverage((int) (0.1 / Constants.loopPeriodSecs));

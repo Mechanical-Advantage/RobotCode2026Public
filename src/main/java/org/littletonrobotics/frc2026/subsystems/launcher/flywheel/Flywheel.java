@@ -61,9 +61,9 @@ public class Flywheel extends FullSubsystem {
       new LoggedTunableNumber(
           "Flywheel/PIDSetpointOffset", 5.0); // Offset up when not running bang-bang
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP", 0.6);
-  private static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD", 0.001);
-  private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.28);
-  private static final LoggedTunableNumber kV = new LoggedTunableNumber("Flywheel/kV", 0.018);
+  private static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD", 0.0);
+  private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.42);
+  private static final LoggedTunableNumber kV = new LoggedTunableNumber("Flywheel/kV", 0.0192);
   private static final LoggedTunableNumber kA = new LoggedTunableNumber("Flywheel/kA", 0.007);
   private static final LoggedTunableNumber maxAcceleration =
       new LoggedTunableNumber("Flywheel/MaxAccelerationRadPerSec2", 350.0);

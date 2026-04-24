@@ -20,6 +20,9 @@ public interface GyroIO {
     public double yawVelocityRadPerSec = 0.0;
     public double pitchVelocityRadPerSec = 0.0;
     public double rollVelocityRadPerSec = 0.0;
+    public double accelerationX = 0.0; // Includes acceleration due to gravity, units "g"
+    public double accelerationY = 0.0;
+    public double accelerationZ = 0.0;
   }
 
   public static class GyroIOOutputs {}

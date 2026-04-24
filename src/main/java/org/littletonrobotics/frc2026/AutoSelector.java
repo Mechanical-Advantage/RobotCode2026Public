@@ -149,6 +149,9 @@ public class AutoSelector extends VirtualSubsystem {
     RIGHT_BUMP(Bump.rightInner),
     RIGHT_TRENCH(Trench.rightStart),
     RIGHT_TRENCH_OFFSET(Trench.rightStartOffset),
+    HUB("Hub"),
+    BUMP("Bump"),
+    TRENCH("Trench"),
     LEFT(),
     RIGHT(),
     LEFT_CLOSE(),
@@ -164,13 +167,21 @@ public class AutoSelector extends VirtualSubsystem {
     FULL_CLOSE();
 
     @Getter private final Translation2d translation;
+    @Getter private final String name;
 
     AutoQuestionResponse(Translation2d translation) {
       this.translation = translation;
+      name = null;
+    }
+
+    AutoQuestionResponse(String name) {
+      this.translation = null;
+      this.name = name;
     }
 
     AutoQuestionResponse() {
       translation = null;
+      name = null;
     }
   }
 }

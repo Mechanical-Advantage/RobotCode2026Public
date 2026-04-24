@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import lombok.Setter;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Robot;
 import org.littletonrobotics.frc2026.RobotState;
@@ -44,10 +45,20 @@ public class Drive extends FullSubsystem {
       new LoggedTunableNumber("Drive/CoastMetersPerSecThreshold", .05);
 
   private final Timer lastMovementTimer = new Timer();
-  private boolean hasStartedCoast = false;
+  private boolean lastEnabled = false;
 
   private SwerveDriveKinematics kinematics =
       new SwerveDriveKinematics(DriveConstants.moduleTranslations);
+
+  public enum CoastRequest {
+    AUTOMATIC,
+    ALWAYS_BRAKE,
+    ALWAYS_COAST
+  }
+
+  @Setter
+  @AutoLogOutput(key = "Drive/CoastRequest")
+  private CoastRequest coastRequest = CoastRequest.AUTOMATIC;
 
   public Drive(
       GyroIO gyroIO,
@@ -110,19 +121,27 @@ public class Drive extends FullSubsystem {
                 Math.abs(module.getVelocityMetersPerSec()) > coastMetersPerSecondThreshold.get())) {
       lastMovementTimer.reset();
     }
-    if (DriverStation.isDisabled()) {
-      if (hasStartedCoast || lastMovementTimer.hasElapsed(coastWaitTime.get())) {
-        for (var module : modules) {
-          module.coast();
-        }
-        hasStartedCoast = true;
-      } else {
-        for (var module : modules) {
-          module.brake();
+
+    if (DriverStation.isEnabled() && !lastEnabled) {
+      coastRequest = CoastRequest.AUTOMATIC;
+    }
+
+    lastEnabled = DriverStation.isEnabled();
+
+    switch (coastRequest) {
+      case AUTOMATIC -> {
+        if (DriverStation.isEnabled()) {
+          setBrakeMode(true);
+        } else if (lastMovementTimer.hasElapsed(coastWaitTime.get())) {
+          setBrakeMode(false);
         }
       }
-    } else {
-      hasStartedCoast = false;
+      case ALWAYS_BRAKE -> {
+        setBrakeMode(true);
+      }
+      case ALWAYS_COAST -> {
+        setBrakeMode(false);
+      }
     }
 
     // Record cycle time
@@ -162,6 +181,18 @@ public class Drive extends FullSubsystem {
 
     // Log optimized setpoints (runSetpoint mutates each state)
     Logger.recordOutput("SwerveStates/SetpointsOptimized", setpointStates);
+  }
+
+  private void setBrakeMode(boolean enabled) {
+    Arrays.stream(modules)
+        .forEach(
+            (module) -> {
+              if (enabled) {
+                module.brake();
+              } else {
+                module.coast();
+              }
+            });
   }
 
   /** Runs the drive in a straight line with the specified drive output. */

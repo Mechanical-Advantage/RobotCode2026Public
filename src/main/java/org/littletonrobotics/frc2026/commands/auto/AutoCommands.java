@@ -15,13 +15,16 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2026.AutoFieldConstants;
+import org.littletonrobotics.frc2026.AutoFieldConstants.Launch;
 import org.littletonrobotics.frc2026.AutoSelector.AutoQuestionResponse;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Constants.Mode;
@@ -150,7 +153,10 @@ public class AutoCommands {
                       t),
                   target.getY());
           var targetRotation =
-              xPosition < FieldConstants.LinesVertical.starting - DriveConstants.fullWidthX / 2.0
+              xPosition
+                      < (FieldConstants.LinesVertical.starting
+                              + FieldConstants.LinesVertical.neutralZoneNear)
+                          / 2.0
                   ? target.getRotation()
                   : xPosition
                           < FieldConstants.LinesVertical.neutralZoneNear + DriveConstants.fullWidthX
@@ -244,6 +250,62 @@ public class AutoCommands {
         .withTimeout(Constants.getMode().equals(Mode.SIM) ? 0.7 : time);
   }
 
+  public static Command returnLaunchAndIndexMindfully(
+      Drive drive,
+      Hopper hopper,
+      Kicker kicker,
+      Flywheel flywheel,
+      Slamtake slamtake,
+      Supplier<AutoQuestionResponse> returnResponse) {
+    return returnLaunchAndIndexMindfully(
+        drive, hopper, kicker, flywheel, slamtake, returnResponse, () -> true);
+  }
+
+  public static Command returnLaunchAndIndexMindfully(
+      Drive drive,
+      Hopper hopper,
+      Kicker kicker,
+      Flywheel flywheel,
+      Slamtake slamtake,
+      Supplier<AutoQuestionResponse> returnResponse,
+      BooleanSupplier readyToLeave) {
+    Timer launchTimer = new Timer();
+    return driveToPose(
+            drive,
+            () ->
+                LaunchCalculator.getStationaryAimedPose(
+                    isLeftSide(returnResponse).getAsBoolean()
+                        ? Launch.leftBump.getTranslation()
+                        : Launch.rightBump.getTranslation(),
+                    true))
+        .until(
+            () ->
+                xCrossed(
+                    FieldConstants.LinesVertical.starting - DriveConstants.fullBaseRadius, false))
+        .andThen(
+            new DriveToPose(
+                    drive,
+                    () ->
+                        LaunchCalculator.getStationaryAimedPose(
+                            RobotState.getInstance().getEstimatedPose().getTranslation(), false))
+                .withDeadline(
+                    Commands.sequence(
+                        Commands.runOnce(() -> launchTimer.restart()),
+                        indexMindfully(
+                                hopper,
+                                kicker,
+                                flywheel,
+                                slamtake,
+                                () ->
+                                    AutoCommands.withinLaunchingTolerance(
+                                        Rotation2d.fromDegrees(8.0)))
+                            .withDeadline(
+                                Commands.waitUntil(
+                                    () ->
+                                        launchTimer.hasElapsed(AutoBuilder.launchTime)
+                                            && readyToLeave.getAsBoolean())))));
+  }
+
   public static Command index(Hopper hopper, Kicker kicker, Flywheel flywheel, Slamtake slamtake) {
     return Commands.waitUntil(flywheel::atGoal)
         .andThen(
@@ -295,6 +357,26 @@ public class AutoCommands {
                         hopper,
                         kicker)))
         .finallyDo(() -> slamtake.setSlamGoal(SlamGoal.RETRACT));
+  }
+
+  public static DoubleSupplier getTimeAtCenterlineCross(
+      Supplier<AutoQuestionResponse> coastTarget) {
+    return () -> {
+      Optional<Trajectory<SwerveSample>> trajectoryOptional =
+          Choreo.loadTrajectory(
+              "launchLeftBumpThroughLeftTrenchToFar%sKachow"
+                  .formatted(coastTarget.get().getName()));
+      if (!coastTarget.get().equals(AutoQuestionResponse.NONE) && trajectoryOptional.isPresent()) {
+        Trajectory<SwerveSample> trajectory = trajectoryOptional.get();
+        for (SwerveSample sample : trajectory.samples()) {
+          if (sample.getPose().getX()
+              >= FieldConstants.fieldLength / 2.0 - DriveConstants.fullWidthX / 2.0) {
+            return sample.t;
+          }
+        }
+      }
+      return 0.0;
+    };
   }
 
   public static Translation2d keepOutX(Bounds bounds, Translation2d translation) {
