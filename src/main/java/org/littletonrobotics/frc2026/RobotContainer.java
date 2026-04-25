@@ -105,6 +105,7 @@ public class RobotContainer {
   private final Trigger disableAutoSpinup = overrides.operatorSwitch(0);
   private final Trigger ignoreHubState = overrides.operatorSwitch(1);
   private final Trigger noTiltCheck = overrides.operatorSwitch(2);
+  private final Trigger sportModeOverride = overrides.operatorSwitch(3);
 
   // Alerts
   private final Alert primaryDisconnected =
@@ -361,8 +362,8 @@ public class RobotContainer {
     primary
         .leftBumper()
         .whileTrue(DriveCommands.joystickDriveWhileLaunching(drive, driverX, driverY))
-        .whileTrue(flywheel.runTrackTargetCommand())
-        .whileTrue(hood.runTrackTargetCommand())
+        .whileTrueContinuous(flywheel.runTrackTargetCommand())
+        .whileTrueContinuous(hood.runTrackTargetCommand())
         .onFalse(Commands.runOnce(() -> slamtake.setSlamGoal(SlamGoal.DEPLOY)))
         .and(() -> LaunchCalculator.getInstance().getParameters().isValid())
         .and(() -> ignoreHubState.getAsBoolean() || hubActiveOrPassing.getAsBoolean())
@@ -640,6 +641,25 @@ public class RobotContainer {
                 .ignoringDisable(true));
     hubCounter.setExternal(!ignoreHubState.getAsBoolean());
 
+    // Sport mode override
+    sportModeOverride
+        .onTrue(
+            Commands.runOnce(
+                    () -> {
+                      flywheel.setSportMode(true);
+                      hopper.setSportMode(true);
+                    })
+                .withName("Enable Sport Mode")
+                .ignoringDisable(true))
+        .onFalse(
+            (Commands.runOnce(
+                    () -> {
+                      flywheel.setSportMode(false);
+                      hopper.setSportMode(false);
+                    })
+                .withName("Disable Sport Mode")
+                .ignoringDisable(true)));
+
     // ****** ALERTS ******
 
     // Warn formissing game data
@@ -765,8 +785,8 @@ public class RobotContainer {
     fuelSim.registerIntake(
         DriveConstants.intakeNearX,
         DriveConstants.intakeFarX,
-        -DriveConstants.fullWidthY / 2,
-        DriveConstants.fullWidthY / 2,
+        -DriveConstants.fullApothemY,
+        DriveConstants.fullApothemY,
         () ->
             slamtake.getSlamGoal().equals(Slamtake.SlamGoal.DEPLOY)
                 && slamtake.getIntakeGoal().equals(Slamtake.IntakeGoal.INTAKE)

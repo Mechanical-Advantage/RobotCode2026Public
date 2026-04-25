@@ -145,13 +145,25 @@ public class DriveConstants {
           Constants.getRobot() == RobotType.ALPHABOT
               ? alphabotFullWidthXInches
               : darwinFullWidthXInches);
+  public static final double fullApothemX =
+      Units.inchesToMeters(
+              Constants.getRobot() == RobotType.ALPHABOT
+                  ? alphabotFullWidthXInches
+                  : darwinFullWidthXInches)
+          / 2.0;
   public static final double fullWidthY =
       Units.inchesToMeters(
           Constants.getRobot() == RobotType.ALPHABOT
               ? alphabotFullWidthYInches
               : darwinFullWidthYInches);
+  public static final double fullApothemY =
+      Units.inchesToMeters(
+              Constants.getRobot() == RobotType.ALPHABOT
+                  ? alphabotFullWidthYInches
+                  : darwinFullWidthYInches)
+          / 2.0;
   public static final double driveBaseRadius = Math.hypot(trackWidthX / 2.0, trackWidthY / 2.0);
-  public static final double fullBaseRadius = Math.hypot(fullWidthX / 2.0, fullWidthY / 2.0);
+  public static final double fullBaseRadius = Math.hypot(fullApothemX, fullApothemY / 2.0);
   public static final double maxLinearSpeed =
       Constants.getRobot() == RobotType.ALPHABOT ? alphabotMaxLinearSpeed : darwinMaxLinearSpeed;
   public static final double maxTrajectoryLinearSpeed =
@@ -200,7 +212,7 @@ public class DriveConstants {
   public static final double turnReductionBR =
       Constants.getRobot() == RobotType.ALPHABOT ? alphabotTurnReductionBR : darwinTurnReductionBR;
 
-  public static final double intakeNearX = fullWidthX / 2.0;
+  public static final double intakeNearX = fullApothemX;
   public static final double intakeFarX = frameWidthX / 2.0 + Units.inchesToMeters(12.0);
   public static final double intakeReferenceX = intakeNearX;
   public static final double intakeWidth = frameWidthY;

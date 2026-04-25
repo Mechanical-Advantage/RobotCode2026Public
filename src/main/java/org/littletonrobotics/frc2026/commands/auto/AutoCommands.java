@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2026.AutoFieldConstants;
 import org.littletonrobotics.frc2026.AutoFieldConstants.Launch;
@@ -161,7 +160,7 @@ public class AutoCommands {
                   : xPosition
                           < FieldConstants.LinesVertical.neutralZoneNear + DriveConstants.fullWidthX
                       ? AllianceFlipUtil.apply(Rotation2d.kPi)
-                      : targetTranslation.minus(currentPose.getTranslation()).getAngle();
+                      : target.getTranslation().minus(currentPose.getTranslation()).getAngle();
           return new Pose2d(targetTranslation, targetRotation);
         });
   }
@@ -359,26 +358,6 @@ public class AutoCommands {
         .finallyDo(() -> slamtake.setSlamGoal(SlamGoal.RETRACT));
   }
 
-  public static DoubleSupplier getTimeAtCenterlineCross(
-      Supplier<AutoQuestionResponse> coastTarget) {
-    return () -> {
-      Optional<Trajectory<SwerveSample>> trajectoryOptional =
-          Choreo.loadTrajectory(
-              "launchLeftBumpThroughLeftTrenchToFar%sKachow"
-                  .formatted(coastTarget.get().getName()));
-      if (!coastTarget.get().equals(AutoQuestionResponse.NONE) && trajectoryOptional.isPresent()) {
-        Trajectory<SwerveSample> trajectory = trajectoryOptional.get();
-        for (SwerveSample sample : trajectory.samples()) {
-          if (sample.getPose().getX()
-              >= FieldConstants.fieldLength / 2.0 - DriveConstants.fullWidthX / 2.0) {
-            return sample.t;
-          }
-        }
-      }
-      return 0.0;
-    };
-  }
-
   public static Translation2d keepOutX(Bounds bounds, Translation2d translation) {
     return new Translation2d(
         translation.getX() <= bounds.minX() || translation.getX() >= bounds.maxX()
@@ -433,7 +412,7 @@ public class AutoCommands {
               keepOutX(
                   AllianceFlipUtil.apply(
                       new Bounds(
-                          FieldConstants.fieldLength / 2.0 + DriveConstants.fullWidthX / 2.0 - 0.2,
+                          FieldConstants.fieldLength / 2.0 + DriveConstants.fullApothemX - 0.2,
                           FieldConstants.fieldLength,
                           0.0,
                           FieldConstants.fieldWidth)),
@@ -515,8 +494,7 @@ public class AutoCommands {
     return new Bounds(
         homeBounds.minX(),
         Math.max(
-            homeBounds.maxX(),
-            FieldConstants.LinesVertical.center + DriveConstants.fullWidthX / 2.0),
+            homeBounds.maxX(), FieldConstants.LinesVertical.center + DriveConstants.fullApothemX),
         homeBounds.minY(),
         homeBounds.maxY());
   }

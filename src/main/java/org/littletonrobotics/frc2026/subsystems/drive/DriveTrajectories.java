@@ -31,7 +31,7 @@ public class DriveTrajectories {
       new PointTarget(
           FieldConstants.Hub.innerCenterPoint.toTranslation2d(), Rotation2d.fromDegrees(10), true);
   public static final double substantialAimUntilXDepot =
-      FieldConstants.Depot.rightCorner.getX() + DriveConstants.fullWidthX / 2.0 + 0.15;
+      FieldConstants.Depot.rightCorner.getX() + DriveConstants.fullApothemX + 0.15;
   public static final double intakeVelocityLimit = 1.8;
 
   static {
@@ -47,6 +47,19 @@ public class DriveTrajectories {
                             .stopped(true)
                             .build())
                     .build())
+            .build());
+
+    paths.put(
+        "NonPath",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(Pose2d.kZero).build(),
+                        PathWaypoint.from(new Pose2d(0.1, 0.0, Rotation2d.kZero)).build())
+                    .build())
+            .stopAtStart(false)
+            .stopAtEnd(false)
             .build());
 
     // MARK: Trench Start -> NZ
@@ -105,8 +118,8 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.FuelPool.leftCenter.plus(
                                         new Translation2d(
-                                            -DriveConstants.fullWidthX / 2.0,
-                                            DriveConstants.fullWidthX / 2.0)),
+                                            -DriveConstants.fullApothemX,
+                                            DriveConstants.fullApothemX)),
                                     Rotation2d.fromDegrees(-90.0)))
                             .build())
                     .build(),
@@ -115,8 +128,7 @@ public class DriveTrajectories {
                         // Into fuel pool
                         PathWaypoint.from(
                                 new Pose2d(
-                                    FieldConstants.fieldLength / 2.0
-                                        - DriveConstants.fullWidthX / 2.0,
+                                    FieldConstants.fieldLength / 2.0 - DriveConstants.fullApothemX,
                                     FieldConstants.FuelPool.leftCenter.getY()
                                         - FieldConstants.FuelPool.width / 4.0
                                         + 0.2,
@@ -132,7 +144,7 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                         FieldConstants.fieldLength / 2.0
-                                            - DriveConstants.fullWidthX / 2.0,
+                                            - DriveConstants.fullApothemX,
                                         FieldConstants.FuelPool.leftCenter.getY()
                                             - FieldConstants.FuelPool.width / 4.0
                                             + 0.2,
@@ -199,7 +211,7 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.FuelPool.leftCenter.plus(
-                                        new Translation2d(-0.2, DriveConstants.fullWidthX / 2.0)),
+                                        new Translation2d(-0.2, DriveConstants.fullApothemX)),
                                     Rotation2d.fromDegrees(-90.0)))
                             .build())
                     .build(),
@@ -287,8 +299,116 @@ public class DriveTrajectories {
             .stopAtEnd(false)
             .build());
 
-    // MARK: Alliance Zone
-    PathRequestBuilder launchLeftBumpThroughLeftTrench =
+    // MARK: > Flightless
+    PathRequestBuilder neutralZoneSweepFlightless =
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    (FieldConstants.LinesVertical.neutralZoneNear
+                                            + FieldConstants.fieldLength / 2.0)
+                                        / 2.0,
+                                    FieldConstants.LinesHorizontal.leftBumpMiddle,
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    (FieldConstants.LinesVertical.neutralZoneNear
+                                            + FieldConstants.fieldLength / 2.0)
+                                        / 2.0,
+                                    FieldConstants.fieldWidth / 2.0 - DriveConstants.fullApothemX,
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .keepInLaneWidth(0.05)
+                    .maxVelocity(intakeVelocityLimit)
+                    .maxAngularVelocity(0.1)
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    (FieldConstants.LinesVertical.neutralZoneNear
+                                                + FieldConstants.fieldLength / 2.0)
+                                            / 2.0
+                                        - DriveConstants.fullApothemX,
+                                    FieldConstants.fieldWidth / 2.0 - DriveConstants.fullWidthX,
+                                    Rotation2d.kPi))
+                            .build(),
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LinesVertical.neutralZoneNear
+                                        + DriveConstants.fullApothemX
+                                        + 0.27,
+                                    FieldConstants.fieldWidth / 2.0 - DriveConstants.fullApothemX,
+                                    Rotation2d.fromDegrees(90)))
+                            .build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LinesVertical.neutralZoneNear
+                                        + DriveConstants.fullApothemX
+                                        + 0.27,
+                                    FieldConstants.fieldWidth / 2.0
+                                        + DriveConstants.fullApothemX
+                                        + 0.7,
+                                    Rotation2d.fromDegrees(90)))
+                            .build())
+                    .keepInLaneWidth(0.05)
+                    .maxVelocity(intakeVelocityLimit)
+                    .maxAngularVelocity(0.1)
+                    .build());
+
+    paths.put(
+        "leftTrenchStartOffsetNeutralZoneSweepFlightless",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Starting in trench
+                        PathWaypoint.from(
+                                new Pose2d(Trench.leftStartOffset, Rotation2d.fromDegrees(-90)))
+                            .build(),
+                        PathWaypoint.from(Trench.leftClear).build())
+                    .keepInLaneWidth(0.05)
+                    .build())
+            .segments(neutralZoneSweepFlightless.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "leftBumpNeutralZoneSweepFlightless",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Just after bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Bump.leftOuter.plus(new Translation2d(0.4, 0)),
+                                    Rotation2d.kZero))
+                            .build())
+                    .maxVelocity(3.2)
+                    .build())
+            .segments(neutralZoneSweepFlightless.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    /* MARK: Alliance Zone
+     *
+     *
+     *
+     *
+     *
+     * MARK: > Launch to NZ
+     */
+    PathRequestBuilder launchLeftBumpThroughTrench =
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
@@ -336,13 +456,13 @@ public class DriveTrajectories {
                     .build());
 
     paths.put(
-        "launchLeftBumpThroughLeftTrench",
+        "launchLeftBumpThroughTrench",
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrench.build().segments)
+            .segments(launchLeftBumpThroughTrench.build().segments)
             .stopAtEnd(false)
             .build());
 
-    PathRequestBuilder launchLeftBumpThroughLeftTrenchKachow =
+    PathRequestBuilder launchLeftBumpThroughTrenchKachow =
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
@@ -366,14 +486,15 @@ public class DriveTrajectories {
                     .build());
 
     paths.put(
-        "launchLeftBumpThroughLeftTrenchKachow",
+        "launchLeftBumpThroughTrenchKachow",
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrenchKachow.build().segments)
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
             .stopAtEnd(false)
             .build());
 
+    // MARK: > Launch to Far Hub
     paths.put(
-        "launchLeftBumpThroughLeftTrenchToFarHubKachow",
+        "launchLeftBumpThroughTrenchToFarHubKachow",
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
@@ -396,15 +517,18 @@ public class DriveTrajectories {
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
+                        // Turn towards hub
                         PathWaypoint.from(
                                 new Pose2d(
                                     Trench.leftClear.plus(new Translation2d(0.0, -0.1)),
-                                    Rotation2d.fromDegrees(-27)))
+                                    Rotation2d.fromDegrees(-40)))
                             .build(),
+
+                        // Drive towards hub
                         PathWaypoint.from(
                                 new Pose2d(
-                                    FieldConstants.LinesVertical.neutralZoneFar,
-                                    FieldConstants.fieldWidth / 2.0,
+                                    FieldConstants.FuelPool.leftCenter.plus(
+                                        new Translation2d(0.0, -0.25)),
                                     Rotation2d.fromDegrees(-40)))
                             .build())
                     .build())
@@ -412,7 +536,7 @@ public class DriveTrajectories {
             .build());
 
     paths.put(
-        "launchLeftBumpThroughLeftTrenchToFarBumpKachow",
+        "launchLeftBumpThroughTrenchToFarBumpKachow",
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
@@ -433,11 +557,11 @@ public class DriveTrajectories {
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Far bump
+                        // Towards bump
                         PathWaypoint.from(
                                 new Pose2d(
-                                    FieldConstants.LinesVertical.neutralZoneFar,
-                                    FieldConstants.LinesHorizontal.leftBumpMiddle,
+                                    FieldConstants.FuelPool.leftCenter.plus(
+                                        new Translation2d(0.0, -0.1)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .build())
@@ -445,7 +569,7 @@ public class DriveTrajectories {
             .build());
 
     paths.put(
-        "launchLeftBumpThroughLeftTrenchToFarTrenchKachow",
+        "launchLeftBumpThroughTrenchToFarTrenchKachow",
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
@@ -459,30 +583,20 @@ public class DriveTrajectories {
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Orient rotation
+                        // Orient towards trench
                         PathWaypoint.from(
                                 new Pose2d(
-                                    FieldConstants.fieldLength / 2.0
-                                        - DriveConstants.fullWidthX / 2.0,
+                                    FieldConstants.fieldLength / 2.0 - DriveConstants.fullApothemX,
                                     Trench.leftEntry.getY(),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .keepInLaneWidth(0.05)
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Far trench
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LinesVertical.neutralZoneFar,
-                                    FieldConstants.LinesHorizontal.leftTrenchMiddle,
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
                     .build())
             .stopAtEnd(false)
             .build());
 
-    PathRequestBuilder leftTrenchThroughCoriolis =
+    // MARK: > Trench thru Coriolis
+    PathRequestBuilder coriolis =
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
@@ -491,8 +605,7 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.FuelPool.nearLeftCorner.plus(
-                                        new Translation2d(
-                                            -0.2, DriveConstants.fullWidthX / 2.0 + 0.1)),
+                                        new Translation2d(-0.2, DriveConstants.fullApothemX + 0.1)),
                                     Rotation2d.fromDegrees(-60)))
                             .build())
                     .build(),
@@ -514,13 +627,12 @@ public class DriveTrajectories {
                                     FieldConstants.fieldCenter
                                         .plus(
                                             new Translation2d(
-                                                -DriveConstants.fullWidthX / 2.0,
-                                                DriveConstants.fullWidthX / 2.0))
+                                                -DriveConstants.fullApothemX,
+                                                DriveConstants.fullApothemX))
                                         .plus(new Translation2d(-0.1, 0.4)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .keepInLaneWidth(0.05)
-                    .maxAngularVelocity(0.2)
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
@@ -540,8 +652,8 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.LinesVertical.neutralZoneNear
-                                        + DriveConstants.fullWidthX / 2.0
-                                        + 0.75,
+                                        + DriveConstants.fullApothemX
+                                        + 0.95,
                                     FieldConstants.fieldWidth / 2.0 + 0.4,
                                     Rotation2d.kPi))
                             .build())
@@ -554,148 +666,104 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farRightCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.2,
-                                            DriveConstants.fullWidthX / 2.0)),
-                                    Rotation2d.fromDegrees(90)))
+                                            DriveConstants.fullApothemX + 0.4,
+                                            DriveConstants.fullApothemX)),
+                                    Rotation2d.kPi))
                             .build())
-                    .maxAngularVelocity(2.5)
                     .build());
 
     paths.put(
-        "launchLeftBumpThroughLeftTrenchToCoriolis",
+        "launchLeftBumpThroughTrenchToCoriolis",
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrench.build().segments)
-            .segments(leftTrenchThroughCoriolis.build().segments)
+            .segments(launchLeftBumpThroughTrench.build().segments)
+            .segments(coriolis.build().segments)
             .stopAtEnd(false)
             .build());
 
     paths.put(
-        "launchLeftBumpThroughLeftTrenchToCoriolisKachow",
+        "launchLeftBumpThroughTrenchToCoriolisKachow",
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrenchKachow.build().segments)
-            .segments(leftTrenchThroughCoriolis.build().segments)
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
+            .segments(coriolis.build().segments)
             .stopAtEnd(false)
             .build());
+
+    // MARK: > Launch to Behind Hub
+    PathRequestBuilder behindHub =
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Fix rotation before robot has crossed bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftBump.farLeftCorner.plus(
+                                        new Translation2d(DriveConstants.fullApothemX + 0.35, 0)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Behind the hub
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftBump.farRightCorner.plus(
+                                        new Translation2d(
+                                            DriveConstants.fullApothemX + 0.35,
+                                            -DriveConstants.fullApothemX + 0.2)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .keepInLaneWidth(0.08)
+                    .maxAngularVelocity(0.1)
+                    .build());
+
+    PathRequestBuilder behindHubFriendship =
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Fix rotation before robot has crossed bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftBump.farLeftCorner.plus(
+                                        new Translation2d(DriveConstants.fullApothemX + 0.5, 0)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Behind the hub
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftBump.farRightCorner.plus(
+                                        new Translation2d(
+                                            DriveConstants.fullApothemX + 0.5,
+                                            DriveConstants.fullApothemX + 0.2)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .keepInLaneWidth(0.08)
+                    .maxAngularVelocity(0.1)
+                    .build());
 
     PathRequestBuilder launchLeftBumpThroughTrenchToBehindHub =
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrench.build().segments)
-            .segments(
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Fix rotation before robot has crossed bump
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farLeftCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5, 0)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Behind the hub
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farRightCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5,
-                                            -DriveConstants.fullWidthX / 2.0 + 0.2)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .keepInLaneWidth(0.08)
-                    .maxAngularVelocity(0.1)
-                    .build());
+            .segments(launchLeftBumpThroughTrench.build().segments)
+            .segments(behindHub.build().segments);
 
     PathRequestBuilder launchLeftBumpThroughTrenchToBehindHubKachow =
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrenchKachow.build().segments)
-            .segments(
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Fix rotation before robot has crossed bump
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farLeftCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5, 0)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Behind the hub
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farRightCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5,
-                                            -DriveConstants.fullWidthX / 2.0 + 0.2)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .keepInLaneWidth(0.08)
-                    .maxAngularVelocity(0.1)
-                    .build());
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
+            .segments(behindHub.build().segments);
 
     PathRequestBuilder launchLeftBumpThroughTrenchToBehindHubFriendship =
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrench.build().segments)
-            .segments(
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Fix rotation before robot has crossed bump
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farLeftCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5, 0)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Behind the hub
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farRightCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5,
-                                            DriveConstants.fullWidthX / 2.0 + 0.2)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .keepInLaneWidth(0.08)
-                    .maxAngularVelocity(0.1)
-                    .build());
+            .segments(launchLeftBumpThroughTrench.build().segments)
+            .segments(behindHubFriendship.build().segments);
 
     PathRequestBuilder launchLeftBumpThroughTrenchToBehindHubFriendshipKachow =
         PathRequest.builder()
-            .segments(launchLeftBumpThroughLeftTrenchKachow.build().segments)
-            .segments(
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Fix rotation before robot has crossed bump
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farLeftCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5, 0)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Behind the hub
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farRightCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.5,
-                                            DriveConstants.fullWidthX / 2.0 + 0.2)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .keepInLaneWidth(0.08)
-                    .maxAngularVelocity(0.1)
-                    .build());
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
+            .segments(behindHubFriendship.build().segments);
 
     PathRequestBuilder bumpLeftOuterToBehindHub =
         PathRequest.builder()
@@ -709,33 +777,8 @@ public class DriveTrajectories {
                                     Rotation2d.kZero))
                             .build())
                     .maxVelocity(3.2)
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Fix rotation right before behind hub sweep
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farRightCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.3,
-                                            DriveConstants.fullWidthX / 2.0)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Behind the hub
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.LeftBump.farRightCorner.plus(
-                                        new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.3,
-                                            -DriveConstants.fullWidthX / 2.0)),
-                                    Rotation2d.fromDegrees(-90)))
-                            .build())
-                    .keepInLaneWidth(0.08)
-                    .maxAngularVelocity(0.1)
-                    .build());
+                    .build())
+            .segments(behindHub.build().segments);
 
     PathRequestBuilder bumpLeftOuterToBehindHubFriendship =
         PathRequest.builder()
@@ -757,8 +800,8 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farRightCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullWidthX / 2.0 + 0.3,
-                                            DriveConstants.fullWidthX / 2.0)),
+                                            DriveConstants.fullApothemX + 0.3,
+                                            DriveConstants.fullApothemX)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .build());
@@ -805,6 +848,240 @@ public class DriveTrajectories {
             .stopAtEnd(false)
             .build());
 
+    // MARK: > Tilde
+    PathRequestBuilder neutralZoneSweepTilde =
+        PathRequest.builder()
+            .segments(behindHub.build().segments)
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.RightBump.farRightCorner.plus(
+                                        new Translation2d(DriveConstants.fullApothemX + 0.5, 0)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .keepInLaneWidth(0.1)
+                    .maxAngularVelocity(0.1)
+                    .build());
+
+    PathRequestBuilder neutralZoneSweepTildeHub =
+        PathRequest.builder()
+            .segments(neutralZoneSweepTilde.build().segments)
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.FuelPool.rightCenter,
+                                    Rotation2d.fromDegrees(40)))
+                            .build())
+                    .build());
+
+    PathRequestBuilder neutralZoneSweepTildeBump =
+        PathRequest.builder()
+            .segments(neutralZoneSweepTilde.build().segments)
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.FuelPool.rightCenter.plus(
+                                        new Translation2d(
+                                            -DriveConstants.fullApothemX,
+                                            -DriveConstants.fullApothemX)),
+                                    Rotation2d.fromDegrees(90)))
+                            .build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.FuelPool.rightCenter
+                                        .plus(
+                                            new Translation2d(
+                                                -DriveConstants.fullApothemX,
+                                                -DriveConstants.fullApothemX))
+                                        .plus(new Translation2d(0.35, 0.1)),
+                                    Rotation2d.fromDegrees(90)))
+                            .build())
+                    .keepInLaneWidth(0.05)
+                    .build());
+
+    PathRequestBuilder neutralZoneSweepTildeTrench =
+        PathRequest.builder()
+            .segments(neutralZoneSweepTilde.build().segments)
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.fieldLength / 2.0
+                                        - DriveConstants.fullApothemX
+                                        - 0.3,
+                                    DriveConstants.fullApothemX + 0.25,
+                                    Rotation2d.fromDegrees(90)))
+                            .build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.fieldLength / 2.0 - DriveConstants.fullApothemX,
+                                    DriveConstants.fullApothemX + 0.25,
+                                    Rotation2d.fromDegrees(90)))
+                            .build())
+                    .keepInLaneWidth(0.05)
+                    .build());
+
+    PathRequestBuilder neutralZoneSweepTildeNone =
+        PathRequest.builder()
+            .segments(neutralZoneSweepTilde.build().segments)
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.FuelPool.rightCenter.plus(
+                                        new Translation2d(0.0, -DriveConstants.fullApothemX)),
+                                    Rotation2d.fromDegrees(90)))
+                            .build())
+                    .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeHub",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrench.build().segments)
+            .segments(neutralZoneSweepTildeHub.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeBump",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrench.build().segments)
+            .segments(neutralZoneSweepTildeBump.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeTrench",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrench.build().segments)
+            .segments(neutralZoneSweepTildeTrench.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeNone",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrench.build().segments)
+            .segments(neutralZoneSweepTildeNone.build().segments)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeHubKachow",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
+            .segments(neutralZoneSweepTildeHub.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeBumpKachow",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
+            .segments(neutralZoneSweepTildeBump.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeTrenchKachow",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
+            .segments(neutralZoneSweepTildeTrench.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToTildeNoneKachow",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughTrenchKachow.build().segments)
+            .segments(neutralZoneSweepTildeNone.build().segments)
+            .build());
+
+    paths.put(
+        "bumpLeftOuterToTildeHub",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Just after bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Bump.leftOuter.plus(new Translation2d(0.4, 0)),
+                                    Rotation2d.kZero))
+                            .build())
+                    .maxVelocity(3.2)
+                    .build())
+            .segments(neutralZoneSweepTildeHub.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "bumpLeftOuterToTildeBump",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Just after bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Bump.leftOuter.plus(new Translation2d(0.4, 0)),
+                                    Rotation2d.kZero))
+                            .build())
+                    .maxVelocity(3.2)
+                    .build())
+            .segments(neutralZoneSweepTildeBump.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "bumpLeftOuterToTildeTrench",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Just after bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Bump.leftOuter.plus(new Translation2d(0.4, 0)),
+                                    Rotation2d.kZero))
+                            .build())
+                    .maxVelocity(3.2)
+                    .build())
+            .segments(neutralZoneSweepTildeTrench.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "bumpLeftOuterToTildeNone",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Just after bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Bump.leftOuter.plus(new Translation2d(0.4, 0)),
+                                    Rotation2d.kZero))
+                            .build())
+                    .maxVelocity(3.2)
+                    .build())
+            .segments(neutralZoneSweepTildeNone.build().segments)
+            .build());
+
+    // MARK: > Behind Hub thru Davis
     PathRequestBuilder behindHubThroughDavis =
         PathRequest.builder()
             .segments(
@@ -862,8 +1139,8 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.fieldCenter.plus(
                                         new Translation2d(
-                                            -DriveConstants.fullWidthX / 2.0 - 0.7,
-                                            DriveConstants.fullWidthX / 2.0 - 0.15)),
+                                            -DriveConstants.fullApothemX - 0.7,
+                                            DriveConstants.fullApothemX - 0.15)),
                                     Rotation2d.fromDegrees(30)))
                             .build(),
                         PathWaypoint.from(
@@ -1022,7 +1299,7 @@ public class DriveTrajectories {
                                 new Translation2d(
                                     substantialAimUntilXDepot,
                                     FieldConstants.Depot.rightCorner.getY()
-                                        - DriveConstants.fullWidthX / 2.0))
+                                        - DriveConstants.fullApothemX))
                             .build())
                     .pointAt(hubTarget)
                     .maxVelocity(0.6)

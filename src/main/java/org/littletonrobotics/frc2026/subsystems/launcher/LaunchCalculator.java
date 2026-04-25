@@ -37,7 +37,7 @@ import org.littletonrobotics.junction.Logger;
 public class LaunchCalculator {
   private static LaunchCalculator instance;
 
-  @Getter private double flywheelSpeedOffsetRadsPerSec = -5.0;
+  @Getter private double flywheelSpeedOffsetRadsPerSec = 0.0;
 
   private final LinearFilter hoodAngleFilter =
       LinearFilter.movingAverage((int) (0.1 / Constants.loopPeriodSecs));
@@ -146,39 +146,32 @@ public class LaunchCalculator {
 
   static {
     minDistance = 0.6;
-    maxDistance = 5.3;
+    maxDistance = 6.0;
     passingMinDistance = 3.0;
     passingMaxDistance = 17.16;
     phaseDelay = 0.03;
 
-    hoodAngleMap.put(0.75, Rotation2d.fromDegrees(10.0));
-    hoodAngleMap.put(1.58, Rotation2d.fromDegrees(20.0));
-    hoodAngleMap.put(1.98, Rotation2d.fromDegrees(23.0));
-    hoodAngleMap.put(2.53, Rotation2d.fromDegrees(26.0));
-    hoodAngleMap.put(3.23, Rotation2d.fromDegrees(29.0));
-    hoodAngleMap.put(3.67, Rotation2d.fromDegrees(31.0));
-    hoodAngleMap.put(3.95, Rotation2d.fromDegrees(33.0));
-    hoodAngleMap.put(4.65, Rotation2d.fromDegrees(34.0));
-    hoodAngleMap.put(5.00, Rotation2d.fromDegrees(37.0));
+    hoodAngleMap.put(1.12, Rotation2d.fromDegrees(10.0));
+    hoodAngleMap.put(1.52, Rotation2d.fromDegrees(20.0));
+    hoodAngleMap.put(2.01, Rotation2d.fromDegrees(23.0));
+    hoodAngleMap.put(2.73, Rotation2d.fromDegrees(26.0));
+    hoodAngleMap.put(3.51, Rotation2d.fromDegrees(29.0));
+    hoodAngleMap.put(3.93, Rotation2d.fromDegrees(32.0));
+    hoodAngleMap.put(4.40, Rotation2d.fromDegrees(34.0));
+    hoodAngleMap.put(4.68, Rotation2d.fromDegrees(36.0));
+    hoodAngleMap.put(4.90, Rotation2d.fromDegrees(38.0));
+    hoodAngleMap.put(5.01, Rotation2d.fromDegrees(38.0));
 
-    flywheelSpeedMap.put(0.75, 145.0);
-    flywheelSpeedMap.put(1.58, 145.0);
-    flywheelSpeedMap.put(1.98, 155.0);
-    flywheelSpeedMap.put(2.53, 160.0);
-    flywheelSpeedMap.put(3.23, 175.0);
-    flywheelSpeedMap.put(3.67, 180.0);
-    flywheelSpeedMap.put(3.95, 190.0);
-    flywheelSpeedMap.put(4.65, 195.0);
-    flywheelSpeedMap.put(5.00, 200.0);
-
-    flywheelSpeedMap.put(1.15, 170.0);
-    flywheelSpeedMap.put(1.41, 160.0);
-    flywheelSpeedMap.put(1.81, 165.0);
-    flywheelSpeedMap.put(2.32, 165.0);
-    flywheelSpeedMap.put(2.71, 175.0);
-    flywheelSpeedMap.put(3.38, 175.0);
-    flywheelSpeedMap.put(4.04, 185.0);
-    flywheelSpeedMap.put(4.83, 195.0);
+    flywheelSpeedMap.put(1.12, 145.0);
+    flywheelSpeedMap.put(1.52, 145.0);
+    flywheelSpeedMap.put(2.01, 153.0);
+    flywheelSpeedMap.put(2.73, 160.0);
+    flywheelSpeedMap.put(3.51, 175.0);
+    flywheelSpeedMap.put(3.93, 188.0);
+    flywheelSpeedMap.put(4.40, 192.0);
+    flywheelSpeedMap.put(4.68, 195.0);
+    flywheelSpeedMap.put(4.90, 195.0);
+    flywheelSpeedMap.put(5.01, 195.0);
 
     kickerSurfaceSpeedMap.put(0.0, 6.0);
     kickerSurfaceSpeedMap.put(3.0, 6.0);

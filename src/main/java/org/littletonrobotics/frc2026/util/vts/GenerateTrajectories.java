@@ -57,9 +57,9 @@ public class GenerateTrajectories {
         Map.of("x", -DriveConstants.trackWidthX / 2, "y", DriveConstants.trackWidthY / 2);
     final Map<String, Double> bumper =
         Map.of(
-            "front", DriveConstants.fullWidthY / 2,
-            "side", DriveConstants.fullWidthX / 2,
-            "back", DriveConstants.fullWidthY / 2);
+            "front", DriveConstants.fullApothemY,
+            "side", DriveConstants.fullApothemX,
+            "back", DriveConstants.fullApothemY);
     final double maxRotorVelocity =
         DriveConstants.maxTrajectoryLinearSpeed
             / DriveConstants.trajectoryWheelRadius

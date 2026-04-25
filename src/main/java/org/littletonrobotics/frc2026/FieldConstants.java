@@ -87,7 +87,7 @@ public class FieldConstants {
     public static final double leftBumpMiddle = (leftBumpStart + leftBumpEnd) / 2.0;
     public static final double leftTrenchOpenEnd = leftBumpStart + Units.inchesToMeters(12.0);
     public static final double leftTrenchOpenStart = fieldWidth;
-    public static final double leftTrenchMiddle = (leftTrenchOpenStart + leftTrenchOpenEnd) / 2.0;
+    public static final double leftTrenchMiddle = (leftTrenchOpenEnd + leftTrenchOpenStart) / 2.0;
   }
 
   /** Hub related constants */

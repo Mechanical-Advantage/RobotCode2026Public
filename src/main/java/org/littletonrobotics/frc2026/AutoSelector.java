@@ -163,7 +163,7 @@ public class AutoSelector extends VirtualSubsystem {
     YES(),
     NO(),
     BOTH(),
-    NONE(),
+    NONE("None"),
     FULL_CLOSE();
 
     @Getter private final Translation2d translation;

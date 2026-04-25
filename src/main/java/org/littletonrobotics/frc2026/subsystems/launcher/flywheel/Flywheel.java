@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.DoubleSupplier;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Constants.Mode;
@@ -59,7 +60,7 @@ public class Flywheel extends FullSubsystem {
       new LoggedTunableNumber("Flywheel/BangBangMinDistance", 3.5);
   private static final LoggedTunableNumber pidSetpointOffset =
       new LoggedTunableNumber(
-          "Flywheel/PIDSetpointOffset", 5.0); // Offset up when not running bang-bang
+          "Flywheel/PIDSetpointOffset", 2.0); // Offset up when not running bang-bang
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP", 0.6);
   private static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD", 0.0);
   private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.42);
@@ -69,6 +70,8 @@ public class Flywheel extends FullSubsystem {
       new LoggedTunableNumber("Flywheel/MaxAccelerationRadPerSec2", 350.0);
   private static final LoggedTunableNumber supplyLimitTeleop =
       new LoggedTunableNumber("Flywheel/SupplyLimitTeleopAmps", 160.0);
+  private static final LoggedTunableNumber supplyLimitTeleopConservative =
+      new LoggedTunableNumber("Flywheel/SupplyLimitTeleopConservativeAmps", 50.0);
   private static final LoggedTunableNumber supplyLimitAuto =
       new LoggedTunableNumber("Flywheel/SupplyLimitAutoAmps", 60.0);
 
@@ -77,6 +80,8 @@ public class Flywheel extends FullSubsystem {
   private double setpointVel = 0.0;
   private double filteredAccel = 0.0; // Used for kA
   private boolean nonZeroAccel = false;
+
+  @Setter private boolean sportMode = false;
 
   @Getter
   @Accessors(fluent = true)
@@ -109,7 +114,7 @@ public class Flywheel extends FullSubsystem {
     if (DriverStation.isAutonomous()) {
       supplyLimit = supplyLimitAuto.get();
     } else {
-      supplyLimit = supplyLimitTeleop.get();
+      supplyLimit = sportMode ? supplyLimitTeleopConservative.get() : supplyLimitTeleop.get();
     }
 
     disconnected.set(
