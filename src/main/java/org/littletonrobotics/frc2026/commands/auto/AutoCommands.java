@@ -18,6 +18,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -235,6 +236,51 @@ public class AutoCommands {
     }
   }
 
+  public static Command driveToCoastTarget(
+      Drive drive,
+      Supplier<AutoQuestionResponse> coastTarget,
+      BooleanSupplier isBump,
+      BooleanSupplier mirror) {
+    return Commands.either(
+        rushToCenter(drive, bumpCrossTime, true)
+            .andThen(
+                driveToPose(
+                    drive,
+                    () ->
+                        coastTarget.get().equals(AutoQuestionResponse.HUB)
+                            ? new Pose2d(
+                                FieldConstants.LinesVertical.neutralZoneFar
+                                    - DriveConstants.fullApothemX,
+                                FieldConstants.fieldWidth / 2.0,
+                                Rotation2d.fromDegrees(-15))
+                            : coastTarget.get().equals(AutoQuestionResponse.BUMP)
+                                ? new Pose2d(
+                                    FieldConstants.LinesVertical.neutralZoneFar
+                                        - DriveConstants.fullApothemX,
+                                    FieldConstants.LinesHorizontal.leftBumpMiddle,
+                                    Rotation2d.fromDegrees(-90))
+                                : new Pose2d(
+                                    FieldConstants.LinesVertical.neutralZoneFar
+                                        - DriveConstants.fullApothemX,
+                                    FieldConstants.LinesHorizontal.leftTrenchMiddle,
+                                    Rotation2d.fromDegrees(-90)))),
+        Commands.select(
+            Map.of(
+                AutoQuestionResponse.HUB,
+                followTrajectory(
+                    "launchLeftTrenchThroughTrenchToFarHubKachow", drive, false, mirror),
+                AutoQuestionResponse.BUMP,
+                followTrajectory(
+                    "launchLeftTrenchThroughTrenchToFarBumpKachow", drive, false, mirror),
+                AutoQuestionResponse.TRENCH,
+                followTrajectory(
+                    "launchLeftTrenchThroughTrenchToFarTrenchKachow", drive, false, mirror),
+                AutoQuestionResponse.NONE,
+                Commands.idle()),
+            coastTarget),
+        isBump);
+  }
+
   public static Command rushToCenter(Drive drive, double time, boolean slow) {
     return Commands.run(
             () ->
@@ -255,28 +301,19 @@ public class AutoCommands {
       Kicker kicker,
       Flywheel flywheel,
       Slamtake slamtake,
-      Supplier<AutoQuestionResponse> returnResponse) {
-    return returnLaunchAndIndexMindfully(
-        drive, hopper, kicker, flywheel, slamtake, returnResponse, () -> true);
-  }
-
-  public static Command returnLaunchAndIndexMindfully(
-      Drive drive,
-      Hopper hopper,
-      Kicker kicker,
-      Flywheel flywheel,
-      Slamtake slamtake,
-      Supplier<AutoQuestionResponse> returnResponse,
+      boolean launchHastily,
+      Supplier<AutoQuestionResponse> launchTarget,
       BooleanSupplier readyToLeave) {
     Timer launchTimer = new Timer();
     return driveToPose(
             drive,
             () ->
-                LaunchCalculator.getStationaryAimedPose(
-                    isLeftSide(returnResponse).getAsBoolean()
-                        ? Launch.leftBump.getTranslation()
-                        : Launch.rightBump.getTranslation(),
-                    true))
+                launchTarget.get().equals(AutoQuestionResponse.LEFT_BUMP)
+                        || launchTarget.get().equals(AutoQuestionResponse.RIGHT_BUMP)
+                    ? isLeftSide(launchTarget).getAsBoolean() ? Launch.leftBump : Launch.rightBump
+                    : isLeftSide(launchTarget).getAsBoolean()
+                        ? Launch.leftTrench
+                        : Launch.rightTrench)
         .until(
             () ->
                 xCrossed(
@@ -297,11 +334,15 @@ public class AutoCommands {
                                 slamtake,
                                 () ->
                                     AutoCommands.withinLaunchingTolerance(
-                                        Rotation2d.fromDegrees(8.0)))
+                                        Rotation2d.fromDegrees(8.0)),
+                                launchHastily)
                             .withDeadline(
                                 Commands.waitUntil(
                                     () ->
-                                        launchTimer.hasElapsed(AutoBuilder.launchTime)
+                                        launchTimer.hasElapsed(
+                                                launchHastily
+                                                    ? AutoBuilder.depotLaunchTime
+                                                    : AutoBuilder.launchTime)
                                             && readyToLeave.getAsBoolean())))));
   }
 
@@ -330,18 +371,31 @@ public class AutoCommands {
                 kicker));
   }
 
-  // Stay retracted while under trench
+  // Index with additional checks
   public static Command indexMindfully(
       Hopper hopper,
       Kicker kicker,
       Flywheel flywheel,
       Slamtake slamtake,
       BooleanSupplier shouldIndex) {
+    return indexMindfully(hopper, kicker, flywheel, slamtake, shouldIndex, false);
+  }
+
+  public static Command indexMindfully(
+      Hopper hopper,
+      Kicker kicker,
+      Flywheel flywheel,
+      Slamtake slamtake,
+      BooleanSupplier shouldIndex,
+      Boolean indexHastily) {
     return Commands.waitUntil(() -> flywheel.atGoal() && shouldIndex.getAsBoolean())
         .andThen(
             new SuppliedWaitCommand(CompactingCommands.slamLaunchDelay)
                 .andThen(
-                    Commands.run(() -> slamtake.setSlamGoal(SlamGoal.RETRACT_SLOW)),
+                    Commands.run(
+                        () ->
+                            slamtake.setSlamGoal(
+                                indexHastily ? SlamGoal.RETRACT_FAST : SlamGoal.RETRACT_SLOW)),
                     Commands.idle())
                 .deadlineFor(
                     Commands.startEnd(

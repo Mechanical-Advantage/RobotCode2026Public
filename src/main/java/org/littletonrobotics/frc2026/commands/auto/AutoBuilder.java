@@ -47,6 +47,7 @@ public class AutoBuilder {
   public static final double neutralZoneIntakeTimeFirst = 2.5;
   public static final double neutralZoneIntakeTimeOther = 3.0;
   public static final double launchTime = 2.5;
+  public static final double depotLaunchTime = 1.5;
 
   // MARK: Monopoly
   public Command monopolySalesman() {

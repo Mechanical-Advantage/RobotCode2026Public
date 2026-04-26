@@ -12,8 +12,14 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.DoubleSupplier;
 import lombok.Getter;
 import lombok.Setter;
@@ -54,6 +60,9 @@ public class Flywheel extends FullSubsystem {
   private static final double efficiency = 0.8; // W(out)/W(in)
   private static double accelFilterTimeConstant = 0.050; // Seconds
 
+  private static final double ffStartDelay = 0.5; // Secs
+  private static final double ffRampRate = 0.2; // Volts/Sec
+
   private static final LoggedTunableNumber bangBangConstant =
       new LoggedTunableNumber("Flywheel/BangBangConstant", 2.0);
   private static final LoggedTunableNumber bangBangMinDistance =
@@ -63,9 +72,13 @@ public class Flywheel extends FullSubsystem {
           "Flywheel/PIDSetpointOffset", 2.0); // Offset up when not running bang-bang
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP", 0.6);
   private static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD", 0.0);
-  private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.42);
+  private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.28);
   private static final LoggedTunableNumber kV = new LoggedTunableNumber("Flywheel/kV", 0.0192);
   private static final LoggedTunableNumber kA = new LoggedTunableNumber("Flywheel/kA", 0.007);
+  private static final LoggedTunableNumber kSTolerance =
+      new LoggedTunableNumber("Flywheel/CharacterizationTolerance/kS", 0.15);
+  private static final LoggedTunableNumber kVTolerance =
+      new LoggedTunableNumber("Flywheel/CharacterizationTolerance/kV", 0.002);
   private static final LoggedTunableNumber maxAcceleration =
       new LoggedTunableNumber("Flywheel/MaxAccelerationRadPerSec2", 350.0);
   private static final LoggedTunableNumber supplyLimitTeleop =
@@ -74,6 +87,9 @@ public class Flywheel extends FullSubsystem {
       new LoggedTunableNumber("Flywheel/SupplyLimitTeleopConservativeAmps", 50.0);
   private static final LoggedTunableNumber supplyLimitAuto =
       new LoggedTunableNumber("Flywheel/SupplyLimitAutoAmps", 60.0);
+
+  @Getter private boolean withinTolerancekS = true;
+  @Getter private boolean withinTolerancekV = true;
 
   private double goalVel = 0.0;
   private double supplyLimit = 200.0;
@@ -200,11 +216,11 @@ public class Flywheel extends FullSubsystem {
     goalVel = velocityRadsPerSec;
     outputs.mode = bangBang ? FlywheelIOOutputMode.VOLTAGE : FlywheelIOOutputMode.VELOCITY;
     outputs.velocityRadsPerSec = setpointVel;
-    outputs.feedforward =
+    outputs.voltage =
         Math.signum(setpointVel) * kS.get() + setpointVel * kV.get() + filteredAccel * kA.get();
     if (bangBang) {
       if (inputs.velocityRadsPerSec < setpointVel) {
-        outputs.feedforward *= bangBangConstant.get();
+        outputs.voltage *= bangBangConstant.get();
       }
     } else {
       outputs.velocityRadsPerSec += pidSetpointOffset.get();
@@ -213,8 +229,13 @@ public class Flywheel extends FullSubsystem {
     Logger.recordOutput("Flywheel/Setpoint", setpointVel);
     Logger.recordOutput("Flywheel/SetpointAccel", filteredAccel);
     Logger.recordOutput("Flywheel/Goal", velocityRadsPerSec);
-    Logger.recordOutput("Flywheel/Feedforward", outputs.feedforward);
+    Logger.recordOutput("Flywheel/Feedforward", outputs.voltage);
     Logger.recordOutput("Flywheel/BangBang", bangBang);
+  }
+
+  private void runVoltage(double voltage) {
+    outputs.mode = FlywheelIOOutputMode.VOLTAGE;
+    outputs.voltage = voltage;
   }
 
   /** Stops the flywheel. */
@@ -232,6 +253,66 @@ public class Flywheel extends FullSubsystem {
 
   public boolean withinTolerance(double toleranceRadPerSec) {
     return Math.abs(inputs.velocityRadsPerSec - goalVel) < toleranceRadPerSec;
+  }
+
+  public Command feedforwardCharacterizationCommand() {
+    List<Double> velocitySamples = new LinkedList<>();
+    List<Double> voltageSamples = new LinkedList<>();
+    Timer timer = new Timer();
+
+    return Commands.sequence(
+        // Reset data
+        Commands.runOnce(
+            () -> {
+              velocitySamples.clear();
+              voltageSamples.clear();
+              withinTolerancekS = true;
+              withinTolerancekV = true;
+            }),
+
+        // Make sure flywheel is not moving
+        stopCommand().withTimeout(ffStartDelay),
+
+        // Start timer
+        Commands.runOnce(timer::restart),
+
+        // Accelerate and gather data
+        Commands.run(
+                () -> {
+                  double voltage = timer.get() * ffRampRate;
+                  runVoltage(voltage);
+                  velocitySamples.add(inputs.velocityRadsPerSec);
+                  voltageSamples.add(voltage);
+                },
+                this)
+
+            // When cancelled, calculate and print results
+            .finallyDo(
+                () -> {
+                  int n = velocitySamples.size();
+                  double sumX = 0.0;
+                  double sumY = 0.0;
+                  double sumXY = 0.0;
+                  double sumX2 = 0.0;
+                  for (int i = 0; i < n; i++) {
+                    sumX += velocitySamples.get(i);
+                    sumY += voltageSamples.get(i);
+                    sumXY += velocitySamples.get(i) * voltageSamples.get(i);
+                    sumX2 += velocitySamples.get(i) * velocitySamples.get(i);
+                  }
+                  double ffkS = (sumY * sumX2 - sumX * sumXY) / (n * sumX2 - sumX * sumX);
+                  double ffkV = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+
+                  withinTolerancekS = EqualsUtil.epsilonEquals(ffkS, kS.get(), kSTolerance.get());
+                  withinTolerancekV = EqualsUtil.epsilonEquals(ffkV, kV.get(), kVTolerance.get());
+
+                  NumberFormat formatter = new DecimalFormat("#0.00000");
+                  System.out.println("********** Flywheel FF Characterization Results **********");
+                  System.out.println("\tkS: " + formatter.format(ffkS));
+                  System.out.println("\tkV: " + formatter.format(ffkV));
+                  System.out.println("\tCurrent kS: " + formatter.format(kS.get()));
+                  System.out.println("\tCurrent kV: " + formatter.format(kV.get()));
+                }));
   }
 
   public Command runTrackTargetCommand() {

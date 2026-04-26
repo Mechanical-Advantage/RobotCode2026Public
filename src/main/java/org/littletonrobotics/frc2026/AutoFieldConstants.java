@@ -86,6 +86,7 @@ public class AutoFieldConstants {
   }
 
   public static class Hub {
+    // Starting line position aligned to the center of the hub
     public static final Translation2d centerStart =
         new Translation2d(
             FieldConstants.LinesVertical.starting - DriveConstants.fullApothemX,
@@ -93,11 +94,11 @@ public class AutoFieldConstants {
   }
 
   public static class Depot {
+    // Poses the robot is in after going through in that direction
     public static final Translation2d leftThrough =
         new Translation2d(
             FieldConstants.Depot.depth / 2.0 + 0.2,
             FieldConstants.Depot.leftCorner.getY() + DriveConstants.fullApothemX + 0.1);
-
     public static final Translation2d rightThrough =
         new Translation2d(
             FieldConstants.Depot.depth / 2.0 + 0.2,
@@ -105,21 +106,21 @@ public class AutoFieldConstants {
   }
 
   public static class Tower {
+    // Translations the robot is in after going through in that direction
     public static final Translation2d leftThrough =
         new Translation2d(
             FieldConstants.Tower.frontFaceX / 2.0,
             FieldConstants.Tower.leftUpright.getY() + DriveConstants.fullApothemX + 0.25);
-
     public static final Translation2d rightThrough =
         new Translation2d(
             FieldConstants.Tower.frontFaceX / 2.0,
             FieldConstants.Tower.rightUpright.getY() - DriveConstants.fullApothemX - 0.25);
 
+    // Translations helpful for trajectories around the tower
     public static final Translation2d leftOutside =
         FieldConstants.Tower.leftUpright.plus(
             new Translation2d(
                 DriveConstants.fullApothemX + 0.3, DriveConstants.fullApothemX + 0.3));
-
     public static final Translation2d rightOutside =
         FieldConstants.Tower.rightUpright.plus(
             new Translation2d(
@@ -127,36 +128,36 @@ public class AutoFieldConstants {
   }
 
   public static class Climb {
+    // Aligned to the uprights
+    public static final Pose2d left =
+        new Pose2d(
+            FieldConstants.Tower.leftUpright.plus(
+                new Translation2d(0.0, +DriveConstants.fullApothemX)),
+            Rotation2d.kZero);
     public static final Pose2d right =
         new Pose2d(
             FieldConstants.Tower.rightUpright.plus(
                 new Translation2d(0.0, -DriveConstants.fullApothemX)),
             Rotation2d.kPi);
 
-    public static final Pose2d rightOffset =
-        new Pose2d(
-            FieldConstants.Tower.rightUpright.plus(
-                new Translation2d(0.0, -DriveConstants.fullApothemX - 0.6)),
-            Rotation2d.kPi);
-
-    public static final Pose2d left =
-        new Pose2d(
-            FieldConstants.Tower.leftUpright.plus(
-                new Translation2d(0.0, +DriveConstants.fullApothemX)),
-            Rotation2d.kZero);
-
+    // Offset vertically from the uprights
     public static final Pose2d leftOffset =
         new Pose2d(
             FieldConstants.Tower.leftUpright.plus(
                 new Translation2d(0.0, +DriveConstants.fullApothemX + 0.6)),
             Rotation2d.kZero);
+    public static final Pose2d rightOffset =
+        new Pose2d(
+            FieldConstants.Tower.rightUpright.plus(
+                new Translation2d(0.0, -DriveConstants.fullApothemX - 0.6)),
+            Rotation2d.kPi);
   }
 
+  // Launch poses
   public static class Launch {
     public static final Pose2d leftTower =
         LaunchCalculator.getStationaryAimedPose(
             Climb.left.getTranslation().plus(new Translation2d(1.5, 0.5)), true);
-
     public static final Pose2d rightTower =
         LaunchCalculator.getStationaryAimedPose(
             Climb.right.getTranslation().plus(new Translation2d(1.5, -0.5)), true);
@@ -167,12 +168,21 @@ public class AutoFieldConstants {
                 FieldConstants.LinesVertical.starting - 0.7,
                 FieldConstants.LinesHorizontal.leftBumpMiddle),
             true);
-
     public static Pose2d rightBump =
         LaunchCalculator.getStationaryAimedPose(
             new Translation2d(
                 FieldConstants.LinesVertical.starting - 0.7,
                 FieldConstants.LinesHorizontal.rightBumpMiddle),
             true);
+
+    public static Pose2d leftTrench =
+        LaunchCalculator.getStationaryAimedPose(
+            new Translation2d(
+                    FieldConstants.LinesVertical.starting - DriveConstants.fullBaseRadius,
+                    FieldConstants.LinesHorizontal.leftTrenchMiddle)
+                .plus(new Translation2d(-0.5, -0.3)),
+            true);
+
+    public static Pose2d rightTrench = VerticalFlipUtil.apply(leftTrench);
   }
 }

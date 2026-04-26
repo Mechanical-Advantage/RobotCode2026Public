@@ -264,6 +264,14 @@ public class RobotState {
     return estimatedRotation;
   }
 
+  public Optional<Rotation3d> getLastEstimatedRotation3d() {
+    var estimatedRotation = rotationBuffer.getInternalBuffer().lastEntry();
+    if (estimatedRotation != null) {
+      return Optional.of(estimatedRotation.getValue());
+    }
+    return Optional.empty();
+  }
+
   // MARK: - Type declarations
 
   public record OdometryObservation(

@@ -33,6 +33,20 @@ public class ChoreoLauncher {
   private static final Path cacheDir = Paths.get("build", "choreo");
 
   /**
+   * Checks if the Choreo CLI is available, downloading it if necessary.
+   *
+   * @return Whether the Choreo CLI is available.
+   */
+  public static boolean checkChoreoCLI() {
+    try {
+      getOrDownloadChoreo();
+      return true;
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
+  /**
    * Generates a trajectory using the Choreo CLI. Downloads the CLI if not already present.
    *
    * @param chorFile The path to the ".chor" project file.

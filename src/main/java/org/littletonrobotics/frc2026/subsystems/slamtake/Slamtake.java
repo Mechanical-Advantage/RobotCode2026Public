@@ -41,6 +41,8 @@ public class Slamtake extends FullSubsystem {
       new LoggedTunableNumber("Slamtake/Slam/RetractMaxVelocity", 3.0);
   private static final LoggedTunableNumber slowRetractMaxVelocityRadsPerSec =
       new LoggedTunableNumber("Slamtake/Slam/SlowRetractMaxVelocity", 0.88);
+  private static final LoggedTunableNumber fastRetractMaxVelocityRadsPerSec =
+      new LoggedTunableNumber("Slamtake/Slam/FastRetractMaxVelocity", 1.3);
   private static final LoggedTunableNumber slamGoalDebounceTime =
       new LoggedTunableNumber("Slamtake/Slam/DebounceTime", 0.5);
   private Debouncer slamGoalDebouncer =
@@ -50,6 +52,8 @@ public class Slamtake extends FullSubsystem {
       new SlewRateLimiter(retractMaxVelocityRadsPerSec.get());
   private SlewRateLimiter slowRetractSlewRateLimiter =
       new SlewRateLimiter(slowRetractMaxVelocityRadsPerSec.get());
+  private SlewRateLimiter fastRetractSlewRateLimiter =
+      new SlewRateLimiter(fastRetractMaxVelocityRadsPerSec.get());
 
   @Getter @Setter @AutoLogOutput private IntakeGoal intakeGoal = IntakeGoal.STOP;
   @Getter @Setter @AutoLogOutput private SlamGoal slamGoal = SlamGoal.RETRACT;
@@ -73,6 +77,9 @@ public class Slamtake extends FullSubsystem {
     if (slowRetractMaxVelocityRadsPerSec.hasChanged(hashCode())) {
       slowRetractSlewRateLimiter = new SlewRateLimiter(slowRetractMaxVelocityRadsPerSec.get());
     }
+    if (fastRetractMaxVelocityRadsPerSec.hasChanged(hashCode())) {
+      fastRetractSlewRateLimiter = new SlewRateLimiter(fastRetractMaxVelocityRadsPerSec.get());
+    }
 
     double rollerVolts = 0.0;
     switch (intakeGoal) {
@@ -94,6 +101,7 @@ public class Slamtake extends FullSubsystem {
             slamGoalDebouncer.calculate(slam.atGoal()) ? SlamState.DEPLOYED : SlamState.MOVING;
         retractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
         slowRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
+        fastRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
       }
       case RETRACT -> {
         double goal = Slam.slamMaxAngle;
@@ -102,6 +110,7 @@ public class Slamtake extends FullSubsystem {
         slamState =
             EqualsUtil.epsilonEquals(setpoint, goal) ? SlamState.RETRACTED : SlamState.MOVING;
         slowRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
+        fastRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
       }
       case RETRACT_SLOW -> {
         double goal = Slam.slamMaxAngle;
@@ -110,12 +119,23 @@ public class Slamtake extends FullSubsystem {
         slamState =
             EqualsUtil.epsilonEquals(setpoint, goal) ? SlamState.RETRACTED : SlamState.MOVING;
         retractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
+        fastRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
+      }
+      case RETRACT_FAST -> {
+        double goal = Slam.slamMaxAngle;
+        double setpoint = fastRetractSlewRateLimiter.calculate(goal);
+        slam.runPosition(setpoint);
+        slamState =
+            EqualsUtil.epsilonEquals(setpoint, goal) ? SlamState.RETRACTED : SlamState.MOVING;
+        retractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
+        slowRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
       }
       case IDLE -> {
         slam.setMode(SlamIOOutputMode.COAST);
         slamState = SlamState.MOVING;
         retractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
         slowRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
+        fastRetractSlewRateLimiter.reset(slam.getMeasuredAngleRad());
       }
     }
 
@@ -175,6 +195,7 @@ public class Slamtake extends FullSubsystem {
     DEPLOY,
     RETRACT,
     RETRACT_SLOW,
+    RETRACT_FAST,
     IDLE
   }
 

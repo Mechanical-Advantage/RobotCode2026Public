@@ -47,7 +47,7 @@ class Capture:
             or remote_a.camera_exposure != remote_b.camera_exposure
             or remote_a.camera_gain != remote_b.camera_gain
             or remote_a.camera_denoise != remote_b.camera_denoise
-            or remote_a.camera_balance_red != remote_b.camera_balance_red   
+            or remote_a.camera_balance_red != remote_b.camera_balance_red
             or remote_a.camera_balance_blue != remote_b.camera_balance_blue
         )
 
@@ -168,7 +168,10 @@ class PylonCapture(Capture):
 
         if self._camera is None:
             if self._device == None:
-                device_infos: list[pylon.DeviceInfo] = pylon.TlFactory.GetInstance().EnumerateDevices()
+                tl_factory = pylon.TlFactory.GetInstance()
+                di_filter = pylon.DeviceInfo()
+                di_filter.SetDeviceClass("BaslerUsb")
+                device_infos: list[pylon.DeviceInfo] = tl_factory.EnumerateDevices([di_filter])
                 self._device: Union[None, any] = None  # Native object type
                 for device_info in device_infos:
                     if device_info.GetSerialNumber() == config_store.remote_config.camera_id:
@@ -204,12 +207,10 @@ class PylonCapture(Capture):
 
                     # Disable auto white balance
                     self._camera.GetNodeMap().GetNode("BalanceWhiteAuto").SetValue("Off")
-                    
-                    
+
                     self._camera.BalanceRatioSelector.SetValue("Red")
                     self._camera.BalanceRatio.SetValue(config_store.remote_config.camera_balance_red)
-                    
-                    
+
                     self._camera.BalanceRatioSelector.SetValue("Blue")
                     self._camera.BalanceRatio.SetValue(config_store.remote_config.camera_balance_blue)
 
@@ -245,9 +246,14 @@ class PylonCapture(Capture):
             except Exception:
                 print("Error when capturing frame:", traceback.format_exc())
                 if self._last_failed_time == None:
-                    self._last_failed_time =  time.time()
+                    self._last_failed_time = time.time()
                 elif time.time() - self._last_failed_time > PylonCapture.failed_time_restart_timeout:
                     print("Multiple consecutive capture failures, restarting")
+                    try:
+                        if self._camera is not None:
+                            self._camera.Close()
+                    except Exception:
+                        pass
                     sys.exit(0)
                 return False, None
 

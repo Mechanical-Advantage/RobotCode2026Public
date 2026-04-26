@@ -16,6 +16,10 @@ public interface FlywheelIO {
     public boolean follower1Connected;
     public boolean follower2Connected;
     public boolean follower3Connected;
+    public boolean bridgeBrownout;
+    public boolean follower1BridgeBrownout;
+    public boolean follower2BridgeBrownout;
+    public boolean follower3BridgeBrownout;
     public double positionRads;
     public double velocityRadsPerSec;
     public double appliedVoltage;
@@ -34,13 +38,16 @@ public interface FlywheelIO {
   public static enum FlywheelIOOutputMode {
     COAST,
     VELOCITY,
-    VOLTAGE
+    VOLTAGE,
+    CHARACTERIZE
   }
 
   public static class FlywheelIOOutputs {
     public FlywheelIOOutputMode mode = FlywheelIOOutputMode.COAST;
     public double velocityRadsPerSec = 0.0;
     public double feedforward = 0.0;
+
+    public double voltage = 0.0;
 
     public double kP;
     public double kD;

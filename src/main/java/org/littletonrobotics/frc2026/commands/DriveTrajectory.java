@@ -19,8 +19,10 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2026.Constants;
+import org.littletonrobotics.frc2026.FieldConstants;
 import org.littletonrobotics.frc2026.RobotState;
 import org.littletonrobotics.frc2026.subsystems.drive.Drive;
+import org.littletonrobotics.frc2026.util.BeachedUtil;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2026.util.geometry.AllianceFlipUtil;
 import org.littletonrobotics.frc2026.util.geometry.VerticalFlipUtil;
@@ -123,10 +125,18 @@ public class DriveTrajectory extends Command {
                             currentPose.getRotation().getRadians(),
                             desiredState.getPose().getRotation().getRadians())
                         + desiredState.omega);
-
-    drive.runVelocity(
-        ChassisSpeeds.fromFieldRelativeSpeeds(
-            new ChassisSpeeds(xOutput, yOutput, thetaOutput), currentPose.getRotation()));
+    boolean nearDepot =
+        RobotState.getInstance().getEstimatedPose().getX() < 2.0
+            || RobotState.getInstance().getEstimatedPose().getX()
+                > FieldConstants.fieldLength - 2.0;
+    Optional<ChassisSpeeds> beachedSpeeds = BeachedUtil.getInstance().getBeachedSpeeds();
+    if (beachedSpeeds.isPresent() && !nearDepot) {
+      drive.runVelocity(beachedSpeeds.get());
+    } else {
+      drive.runVelocity(
+          ChassisSpeeds.fromFieldRelativeSpeeds(
+              new ChassisSpeeds(xOutput, yOutput, thetaOutput), currentPose.getRotation()));
+    }
 
     RobotState.getInstance()
         .setRobotSetpointVelocity(

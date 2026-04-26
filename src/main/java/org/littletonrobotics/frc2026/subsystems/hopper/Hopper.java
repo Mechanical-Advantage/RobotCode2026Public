@@ -23,6 +23,8 @@ import org.littletonrobotics.junction.Logger;
 public class Hopper extends FullSubsystem {
   private static final LoggedTunableNumber rollerLaunchVolts =
       new LoggedTunableNumber("Hopper/Roller/LaunchVolts", 12.0);
+  private static final LoggedTunableNumber rollerBlearghhVolts =
+      new LoggedTunableNumber("Hopper/Roller/BlearghhVolts", 12.0);
   private static final LoggedTunableNumber rollerConservativeLaunchVolts =
       new LoggedTunableNumber("Hopper/Roller/ConservativeLaunchVolts", 3.0);
   private static final LoggedTunableNumber rollerOuttakeVolts =
@@ -56,6 +58,9 @@ public class Hopper extends FullSubsystem {
       case LAUNCH -> {
         rollerVolts = sportMode ? rollerConservativeLaunchVolts.get() : rollerLaunchVolts.get();
       }
+      case BLEARGHH -> {
+        rollerVolts = rollerBlearghhVolts.get();
+      }
       case OUTTAKE -> {
         rollerVolts = rollerOuttakeVolts.get();
       }
@@ -76,6 +81,7 @@ public class Hopper extends FullSubsystem {
 
   public enum Goal {
     LAUNCH,
+    BLEARGHH,
     OUTTAKE,
     STOP
   }

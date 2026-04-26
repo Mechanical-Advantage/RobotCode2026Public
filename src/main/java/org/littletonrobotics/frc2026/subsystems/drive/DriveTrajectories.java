@@ -30,8 +30,6 @@ public class DriveTrajectories {
   public static final PointTarget hubTarget =
       new PointTarget(
           FieldConstants.Hub.innerCenterPoint.toTranslation2d(), Rotation2d.fromDegrees(10), true);
-  public static final double substantialAimUntilXDepot =
-      FieldConstants.Depot.rightCorner.getX() + DriveConstants.fullApothemX + 0.15;
   public static final double intakeVelocityLimit = 1.8;
 
   static {
@@ -83,7 +81,10 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(Trench.leftStartOffset, Rotation2d.fromDegrees(-90)))
                             .build(),
-                        PathWaypoint.from(Trench.leftClear).build())
+                        PathWaypoint.from(Trench.leftClear.plus(new Translation2d(-0.1, 0.0)))
+                            .build())
+                    .keepInLaneWidth(0.1)
+                    .maxAngularVelocity(0.1)
                     .build());
 
     paths.put(
@@ -325,7 +326,6 @@ public class DriveTrajectories {
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .keepInLaneWidth(0.05)
-                    .maxVelocity(intakeVelocityLimit)
                     .maxAngularVelocity(0.1)
                     .build(),
                 PathRequestSegment.builder()
@@ -361,7 +361,6 @@ public class DriveTrajectories {
                                     Rotation2d.fromDegrees(90)))
                             .build())
                     .keepInLaneWidth(0.05)
-                    .maxVelocity(intakeVelocityLimit)
                     .maxAngularVelocity(0.1)
                     .build());
 
@@ -492,15 +491,13 @@ public class DriveTrajectories {
             .stopAtEnd(false)
             .build());
 
-    // MARK: > Launch to Far Hub
-    paths.put(
-        "launchLeftBumpThroughTrenchToFarHubKachow",
+    PathRequestBuilder launchLeftTrenchThroughTrenchKachow =
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
                         // Continue after launching
-                        PathWaypoint.from(Launch.leftBump).build(),
+                        PathWaypoint.from(Launch.leftTrench).build(),
 
                         // Prepare to enter trench
                         PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.kZero)).build())
@@ -514,6 +511,35 @@ public class DriveTrajectories {
                                     Rotation2d.kZero))
                             .build())
                     .keepInLaneWidth(0.03)
+                    .maxAngularVelocity(0.05)
+                    .build());
+
+    paths.put(
+        "launchLeftTrenchThroughTrenchKachow",
+        PathRequest.builder()
+            .segments(launchLeftTrenchThroughTrenchKachow.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    // MARK: > Launch to Coast
+    PathRequestBuilder enterLeftTrenchToFarHub =
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Prepare to enter trench
+                        PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.kZero)).build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Drive through and clear trench
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Trench.leftClear.plus(new Translation2d(-0.6, 0.0)),
+                                    Rotation2d.kZero))
+                            .build())
+                    .keepInLaneWidth(0.03)
+                    .maxAngularVelocity(0.1)
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
@@ -531,19 +557,35 @@ public class DriveTrajectories {
                                         new Translation2d(0.0, -0.25)),
                                     Rotation2d.fromDegrees(-40)))
                             .build())
+                    .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToFarHubKachow",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(PathWaypoint.from(Launch.leftBump).build())
                     .build())
+            .segments(enterLeftTrenchToFarHub.build().segments)
             .stopAtEnd(false)
             .build());
 
     paths.put(
-        "launchLeftBumpThroughTrenchToFarBumpKachow",
+        "launchLeftTrenchThroughTrenchToFarHubKachow",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(PathWaypoint.from(Launch.leftTrench).build())
+                    .build())
+            .segments(enterLeftTrenchToFarHub.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    PathRequestBuilder enterLeftTrenchToFarBump =
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Continue after launching
-                        PathWaypoint.from(Launch.leftBump).build(),
-
                         // Prepare to enter trench
                         PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.fromDegrees(-90)))
                             .build())
@@ -554,6 +596,7 @@ public class DriveTrajectories {
                         PathWaypoint.from(new Pose2d(Trench.leftClear, Rotation2d.fromDegrees(-90)))
                             .build())
                     .keepInLaneWidth(0.05)
+                    .maxAngularVelocity(0.1)
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
@@ -564,19 +607,35 @@ public class DriveTrajectories {
                                         new Translation2d(0.0, -0.1)),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
+                    .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToFarBumpKachow",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(PathWaypoint.from(Launch.leftBump).build())
                     .build())
+            .segments(enterLeftTrenchToFarBump.build().segments)
             .stopAtEnd(false)
             .build());
 
     paths.put(
-        "launchLeftBumpThroughTrenchToFarTrenchKachow",
+        "launchLeftTrenchThroughTrenchToFarBumpKachow",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(PathWaypoint.from(Launch.leftTrench).build())
+                    .build())
+            .segments(enterLeftTrenchToFarBump.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    PathRequestBuilder enterLeftTrenchToFarTrench =
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Continue after launching
-                        PathWaypoint.from(Launch.leftBump).build(),
-
                         // Prepare to enter trench
                         PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.fromDegrees(-90)))
                             .build())
@@ -591,7 +650,28 @@ public class DriveTrajectories {
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .keepInLaneWidth(0.05)
+                    .maxAngularVelocity(0.1)
+                    .build());
+
+    paths.put(
+        "launchLeftBumpThroughTrenchToFarTrenchKachow",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(PathWaypoint.from(Launch.leftBump).build())
                     .build())
+            .segments(enterLeftTrenchToFarTrench.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftTrenchThroughTrenchToFarTrenchKachow",
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(PathWaypoint.from(Launch.leftTrench).build())
+                    .build())
+            .segments(enterLeftTrenchToFarTrench.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -671,6 +751,14 @@ public class DriveTrajectories {
                                     Rotation2d.kPi))
                             .build())
                     .build());
+
+    paths.put(
+        "leftTrenchStartOffsetThroughTrenchToCoriolis",
+        PathRequest.builder()
+            .segments(trenchLeftStartOffsetToNeutralZone.build().segments)
+            .segments(coriolis.build().segments)
+            .stopAtEnd(false)
+            .build());
 
     paths.put(
         "launchLeftBumpThroughTrenchToCoriolis",
@@ -777,8 +865,19 @@ public class DriveTrajectories {
                                     Rotation2d.kZero))
                             .build())
                     .maxVelocity(3.2)
-                    .build())
-            .segments(behindHub.build().segments);
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Behind the hub
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftBump.farRightCorner.plus(
+                                        new Translation2d(
+                                            DriveConstants.fullApothemX + 0.35,
+                                            -DriveConstants.fullApothemX + 0.2)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .build());
 
     PathRequestBuilder bumpLeftOuterToBehindHubFriendship =
         PathRequest.builder()
@@ -849,7 +948,7 @@ public class DriveTrajectories {
             .build());
 
     // MARK: > Tilde
-    PathRequestBuilder neutralZoneSweepTilde =
+    PathRequestBuilder trenchNeutralZoneSweepTilde =
         PathRequest.builder()
             .segments(behindHub.build().segments)
             .segments(
@@ -865,9 +964,24 @@ public class DriveTrajectories {
                     .maxAngularVelocity(0.1)
                     .build());
 
-    PathRequestBuilder neutralZoneSweepTildeHub =
+    PathRequestBuilder bumpNeutralZoneSweepTilde =
         PathRequest.builder()
-            .segments(neutralZoneSweepTilde.build().segments)
+            .segments(bumpLeftOuterToBehindHub.build().segments)
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.RightBump.farRightCorner.plus(
+                                        new Translation2d(DriveConstants.fullApothemX + 0.5, 0)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
+                    .keepInLaneWidth(0.1)
+                    .maxAngularVelocity(0.1)
+                    .build());
+
+    PathRequestBuilder neutralZoneSweepTildeEndHub =
+        PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
@@ -878,9 +992,8 @@ public class DriveTrajectories {
                             .build())
                     .build());
 
-    PathRequestBuilder neutralZoneSweepTildeBump =
+    PathRequestBuilder neutralZoneSweepTildeEndBump =
         PathRequest.builder()
-            .segments(neutralZoneSweepTilde.build().segments)
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
@@ -908,9 +1021,8 @@ public class DriveTrajectories {
                     .keepInLaneWidth(0.05)
                     .build());
 
-    PathRequestBuilder neutralZoneSweepTildeTrench =
+    PathRequestBuilder neutralZoneSweepTildeEndTrench =
         PathRequest.builder()
-            .segments(neutralZoneSweepTilde.build().segments)
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
@@ -934,9 +1046,8 @@ public class DriveTrajectories {
                     .keepInLaneWidth(0.05)
                     .build());
 
-    PathRequestBuilder neutralZoneSweepTildeNone =
+    PathRequestBuilder neutralZoneSweepTildeEndNone =
         PathRequest.builder()
-            .segments(neutralZoneSweepTilde.build().segments)
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
@@ -952,7 +1063,8 @@ public class DriveTrajectories {
         "launchLeftBumpThroughTrenchToTildeHub",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrench.build().segments)
-            .segments(neutralZoneSweepTildeHub.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndHub.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -960,7 +1072,8 @@ public class DriveTrajectories {
         "launchLeftBumpThroughTrenchToTildeBump",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrench.build().segments)
-            .segments(neutralZoneSweepTildeBump.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndBump.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -968,7 +1081,8 @@ public class DriveTrajectories {
         "launchLeftBumpThroughTrenchToTildeTrench",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrench.build().segments)
-            .segments(neutralZoneSweepTildeTrench.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndTrench.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -976,14 +1090,16 @@ public class DriveTrajectories {
         "launchLeftBumpThroughTrenchToTildeNone",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrench.build().segments)
-            .segments(neutralZoneSweepTildeNone.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndNone.build().segments)
             .build());
 
     paths.put(
         "launchLeftBumpThroughTrenchToTildeHubKachow",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrenchKachow.build().segments)
-            .segments(neutralZoneSweepTildeHub.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndHub.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -991,7 +1107,8 @@ public class DriveTrajectories {
         "launchLeftBumpThroughTrenchToTildeBumpKachow",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrenchKachow.build().segments)
-            .segments(neutralZoneSweepTildeBump.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndBump.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -999,7 +1116,8 @@ public class DriveTrajectories {
         "launchLeftBumpThroughTrenchToTildeTrenchKachow",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrenchKachow.build().segments)
-            .segments(neutralZoneSweepTildeTrench.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndTrench.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -1007,7 +1125,8 @@ public class DriveTrajectories {
         "launchLeftBumpThroughTrenchToTildeNoneKachow",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrenchKachow.build().segments)
-            .segments(neutralZoneSweepTildeNone.build().segments)
+            .segments(trenchNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndNone.build().segments)
             .build());
 
     paths.put(
@@ -1024,7 +1143,8 @@ public class DriveTrajectories {
                             .build())
                     .maxVelocity(3.2)
                     .build())
-            .segments(neutralZoneSweepTildeHub.build().segments)
+            .segments(bumpNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndHub.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -1042,7 +1162,8 @@ public class DriveTrajectories {
                             .build())
                     .maxVelocity(3.2)
                     .build())
-            .segments(neutralZoneSweepTildeBump.build().segments)
+            .segments(bumpNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndBump.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -1060,7 +1181,8 @@ public class DriveTrajectories {
                             .build())
                     .maxVelocity(3.2)
                     .build())
-            .segments(neutralZoneSweepTildeTrench.build().segments)
+            .segments(bumpNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndTrench.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -1078,7 +1200,8 @@ public class DriveTrajectories {
                             .build())
                     .maxVelocity(3.2)
                     .build())
-            .segments(neutralZoneSweepTildeNone.build().segments)
+            .segments(bumpNeutralZoneSweepTilde.build().segments)
+            .segments(neutralZoneSweepTildeEndNone.build().segments)
             .build());
 
     // MARK: > Behind Hub thru Davis
@@ -1156,6 +1279,15 @@ public class DriveTrajectories {
                     .build());
 
     paths.put(
+        "leftTrenchStartOffsetThroughTrenchToDavis",
+        PathRequest.builder()
+            .segments(trenchLeftStartOffsetToNeutralZone.build().segments)
+            .segments(behindHub.build().segments)
+            .segments(behindHubThroughDavis.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
         "launchLeftBumpThroughTrenchToDavis",
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrenchToBehindHub.build().segments)
@@ -1168,6 +1300,15 @@ public class DriveTrajectories {
         PathRequest.builder()
             .segments(launchLeftBumpThroughTrenchToBehindHubKachow.build().segments)
             .segments(behindHubThroughDavis.build().segments)
+            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "leftTrenchStartOffsetThroughTrenchToDavisFriendship",
+        PathRequest.builder()
+            .segments(trenchLeftStartOffsetToNeutralZone.build().segments)
+            .segments(behindHubFriendship.build().segments)
+            .segments(behindHubThroughDavisFriendship.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -1278,8 +1419,7 @@ public class DriveTrajectories {
                     .keepInLaneWidth(0.05)
                     .build());
 
-    paths.put(
-        "launchLeftBumpThroughDepotAndBack",
+    PathRequestBuilder launchLeftBumpThroughDepotLeftToRight =
         PathRequest.builder()
             .segments(
                 PathRequestSegment.builder()
@@ -1289,20 +1429,15 @@ public class DriveTrajectories {
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Starting launch translation
-                        PathWaypoint.from(Launch.leftBump.getTranslation()).build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
                         // Edge of depot offset translation
                         PathWaypoint.from(
                                 new Translation2d(
-                                    substantialAimUntilXDepot,
+                                    FieldConstants.Depot.rightCorner.getX()
+                                        + DriveConstants.fullApothemX
+                                        + 0.15,
                                     FieldConstants.Depot.rightCorner.getY()
                                         - DriveConstants.fullApothemX))
                             .build())
-                    .pointAt(hubTarget)
-                    .maxVelocity(0.6)
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
@@ -1316,23 +1451,34 @@ public class DriveTrajectories {
             .segments(
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Through Depot translation
-                        PathWaypoint.from(Depot.leftThrough).build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
                         // Curve around end of depot
                         PathWaypoint.from(Depot.leftThrough.plus(new Translation2d(0.2, 0.25)))
                             .build())
-                    .build(),
+                    .build());
+
+    paths.put(
+        "launchLeftBumpThroughDepotToLaunchLeftBump",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughDepotLeftToRight.build().segments)
+            .segments(
                 PathRequestSegment.builder()
                     .waypoints(
                         // Launch left bump translation
-                        PathWaypoint.from(Launch.leftBump.getTranslation()).build())
-                    .pointAt(hubTarget)
-                    .maxVelocity(0.8)
+                        PathWaypoint.from(Launch.leftBump).build())
                     .build())
-            .stopAtEnd(false)
+            .build());
+
+    paths.put(
+        "launchLeftBumpThroughDepotToLaunchLeftTrench",
+        PathRequest.builder()
+            .segments(launchLeftBumpThroughDepotLeftToRight.build().segments)
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Launch left bump translation
+                        PathWaypoint.from(Launch.leftTrench).build())
+                    .keepInLaneWidth(0.1)
+                    .build())
             .build());
   }
 }

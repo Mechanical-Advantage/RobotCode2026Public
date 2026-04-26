@@ -67,6 +67,7 @@ import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.IntakeGoal;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.SlamGoal;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
 import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
+import org.littletonrobotics.frc2026.util.BeachedUtil;
 import org.littletonrobotics.frc2026.util.ContinuousConditionalCommand;
 import org.littletonrobotics.frc2026.util.FuelSim;
 import org.littletonrobotics.frc2026.util.HubShiftUtil;
@@ -122,7 +123,6 @@ public class RobotContainer {
   private final LoggedDashboardChooser<AprilTagLayoutType> aprilTagLayoutChooser;
   private final LoggedNetworkNumber offsetTime =
       new LoggedNetworkNumber("/SmartDashboard/Auto/Offset Time?", 0.0);
-  ;
 
   private boolean coastOverride = false;
 
@@ -501,6 +501,30 @@ public class RobotContainer {
                                 LaunchCalculator.trenchPreset.hoodAngleDeg().get()),
                         () -> 0.0)));
 
+    // Blearghh button
+    primary
+        .upperRightPaddle()
+        .whileTrue(
+            flywheel
+                .runFixedCommand(LaunchCalculator.blearghhPreset.flywheelSpeed(), false)
+                .alongWith(
+                    hood.runFixedCommand(
+                        () ->
+                            Units.degreesToRadians(
+                                LaunchCalculator.blearghhPreset.hoodAngleDeg().get()),
+                        () -> 0.0)))
+        .and(() -> flywheel.withinTolerance(40.0))
+        .whileTrue(
+            Commands.parallel(
+                Commands.startEnd(
+                    () -> hopper.setGoal(Hopper.Goal.BLEARGHH),
+                    () -> hopper.setGoal(Hopper.Goal.STOP),
+                    hopper),
+                Commands.startEnd(
+                    () -> kicker.setGoal(Kicker.Goal.BLEARGHH),
+                    () -> kicker.setGoal(Kicker.Goal.STOP),
+                    kicker)));
+
     // Retract intake
     primary
         .rightTrigger()
@@ -603,6 +627,17 @@ public class RobotContainer {
                         Commands.waitSeconds(0.1)))
                 .ignoringDisable(true));
 
+    // Flywheel feedforward characterization test
+    secondary
+        .povRight()
+        .whileTrue(flywheel.feedforwardCharacterizationCommand())
+        .onFalse(
+            Commands.runEnd(
+                    () -> secondary.setRumble(RumbleType.kBothRumble, 1.0),
+                    () -> secondary.setRumble(RumbleType.kBothRumble, 0.0))
+                .withTimeout(.5)
+                .onlyIf(() -> !(flywheel.isWithinTolerancekS() && flywheel.isWithinTolerancekV())));
+
     // Test flywheel spin-up
     secondary.leftBumper().whileTrue(flywheel.runFixedCommand(() -> 200.0, false));
 
@@ -639,6 +674,7 @@ public class RobotContainer {
             Commands.runOnce(() -> hubCounter.setExternal(true))
                 .withName("Disable External Hub Counter Control")
                 .ignoringDisable(true));
+    BeachedUtil.getInstance().setIgnoreBeached(noTiltCheck);
     hubCounter.setExternal(!ignoreHubState.getAsBoolean());
 
     // Sport mode override

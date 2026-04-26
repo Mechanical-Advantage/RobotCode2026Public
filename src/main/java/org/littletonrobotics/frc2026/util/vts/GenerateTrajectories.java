@@ -22,6 +22,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.subsystems.drive.DriveConstants;
 import org.littletonrobotics.frc2026.subsystems.drive.DriveTrajectories;
@@ -103,12 +105,11 @@ public class GenerateTrajectories {
                 new ExpVal(DriveConstants.trackWidthY + " m", DriveConstants.trackWidthY))
             .build();
 
-    System.out.print("\rSearching for VTS Choreo project 🔎");
     File chorFile = Path.of("src", "main", "deploy", "vts", "VTS.chor").toFile();
     if (!chorFile.exists()
         || readTrajHash(chorFile, "VTS") == null
         || !readTrajHash(chorFile, "VTS").equals(getHashCode(robotConfig, null))) {
-      System.out.print("\rVTS Choreo project not found or not up-to-date: Regenerating 🔄");
+      System.out.println("VTS Choreo Project: Not found or not up-to-date: Generating 🔄");
       ChorFileRoot chorRoot =
           ChorFileRoot.builder()
               .name("VTS")
@@ -123,330 +124,333 @@ public class GenerateTrajectories {
 
       try {
         mapper.writeValue(chorFile, chorRoot);
-        System.out.println(
-            "\r" + " ".repeat(120) + "\rVTS Choreo project: Generated successfully ✅");
+        System.out.println("VTS Choreo Project: Generated successfully ✅");
       } catch (IOException e) {
-        System.out.println("\r" + " ".repeat(120) + "\rVTS Choreo project: FAILED to generate 😬");
+        System.out.println("VTS Choreo Project: FAILED to generate 😬");
         e.printStackTrace();
       }
     } else {
-      System.out.println("\r" + " ".repeat(120) + "\rVTS Choreo project: Up-to-date 👍");
+      System.out.println("VTS Choreo Project: Up-to-date 👍");
     }
 
-    // Generate trajectories
-    List<String> completedPaths = new ArrayList<>();
-    for (Map.Entry<String, PathRequest> entry : DriveTrajectories.paths.entrySet()) {
-      String name = entry.getKey();
-      PathRequest request = entry.getValue();
-
-      System.out.print("\r" + " ".repeat(120) + "\rSearching for " + name + " 🔎");
-
-      // Check hashcodes
-      File trajFile = Path.of("src", "main", "deploy", "vts", name + ".traj").toFile();
-      try {
-        if (trajFile.exists()
-            && trajFile.getCanonicalFile().getName().equals(trajFile.getName())
-            && readTrajHash(trajFile, name) != null
-            && readTrajHash(trajFile, name).equals(getHashCode(robotConfig, entry.getValue()))) {
-          System.out.println("\r" + " ".repeat(120) + "\r" + name + ": Up-to-date 👍");
-          completedPaths.add(name);
-          continue;
-        }
-      } catch (IOException e) {
-        // File does not exist, generate
-      }
-
-      // Delete old file
-      if (trajFile.exists()) {
-        trajFile.delete();
-      }
-
-      // Print status
-      System.out.print(
-          "\r"
-              + " ".repeat(120)
-              + "\r"
-              + name
-              + " not found or not up-to-date: Regenerating 🔄 (JSON)");
-      double startTime = System.currentTimeMillis();
-
-      // Create list of constraints from segments
-      int n_waypoint = 0;
-      List<Constraint> constraints = new ArrayList<>();
-
-      // Check for stopAtStart
-      if (request.stopAtStart) {
-        constraints.add(
-            Constraint.builder()
-                .from("first")
-                .to(null)
-                .data(Map.of("type", "StopPoint", "props", Map.of()))
-                .enabled(true)
-                .build());
-      }
-
-      // Check for stopAtEnd
-      if (request.stopAtEnd) {
-        constraints.add(
-            Constraint.builder()
-                .from("last")
-                .to(null)
-                .data(Map.of("type", "StopPoint", "props", Map.of()))
-                .enabled(true)
-                .build());
-      }
-
-      for (int i = 0; i < request.segments.size(); i++) {
-        PathRequestSegment segment = request.segments.get(i);
-
-        // Check for waypoints that are marked as stop points
-        for (int j = 0; j < segment.waypoints.size(); j++) {
-          if (segment.waypoints.get(j).stopped) {
-            constraints.add(
-                Constraint.builder()
-                    .from(n_waypoint + j)
-                    .to(null)
-                    .data(Map.of("type", "StopPoint", "props", Map.of()))
-                    .enabled(true)
-                    .build());
-          }
-        }
-        // Check for max velocity
-        if (segment.maxVelocity >= 0) {
-          constraints.add(
-              Constraint.builder()
-                  .from(Math.max(0, n_waypoint - 1))
-                  .to(n_waypoint + segment.waypoints.size() - 1)
-                  .data(
-                      Map.of(
-                          "type",
-                          "MaxVelocity",
-                          "props",
-                          Map.of(
-                              "max",
-                              Map.of(
-                                  "exp",
-                                  segment.maxVelocity + " m / s",
-                                  "val",
-                                  segment.maxVelocity))))
-                  .enabled(true)
-                  .build());
-        }
-        // Check for max acceleration
-        if (segment.maxAcceleration >= 0) {
-          constraints.add(
-              Constraint.builder()
-                  .from(Math.max(0, n_waypoint - 1))
-                  .to(n_waypoint + segment.waypoints.size() - 1)
-                  .data(
-                      Map.of(
-                          "type",
-                          "MaxAcceleration",
-                          "props",
-                          Map.of(
-                              "max",
-                              Map.of(
-                                  "exp",
-                                  segment.maxAcceleration + " m / s ^ 2",
-                                  "val",
-                                  segment.maxAcceleration))))
-                  .enabled(true)
-                  .build());
-        }
-        // Check for max angular velocity
-        if (segment.maxAngularVelocity >= 0) {
-          constraints.add(
-              Constraint.builder()
-                  .from(Math.max(0, n_waypoint - 1))
-                  .to(n_waypoint + segment.waypoints.size() - 1)
-                  .data(
-                      Map.of(
-                          "type",
-                          "MaxAngularVelocity",
-                          "props",
-                          Map.of(
-                              "max",
-                              Map.of(
-                                  "exp",
-                                  segment.maxAngularVelocity + " rad / s",
-                                  "val",
-                                  segment.maxAngularVelocity))))
-                  .enabled(true)
-                  .build());
-        }
-
-        // Check for point at
-        if (segment.pointAt != null) {
-          constraints.add(
-              Constraint.builder()
-                  .from(Math.max(0, n_waypoint - 1))
-                  .to(n_waypoint + segment.waypoints.size() - 1)
-                  .data(
-                      Map.of(
-                          "type",
-                          "PointAt",
-                          "props",
-                          Map.of(
-                              "x",
-                              new ExpVal(
-                                  segment.pointAt.target().getX() + "m",
-                                  segment.pointAt.target().getX()),
-                              "y",
-                              new ExpVal(
-                                  segment.pointAt.target().getY() + "m",
-                                  segment.pointAt.target().getY()),
-                              "tolerance",
-                              new ExpVal(
-                                  segment.pointAt.tolerance().getRadians() + " rad",
-                                  segment.pointAt.tolerance().getRadians()),
-                              "flip",
-                              segment.pointAt.flip())))
-                  .enabled(true)
-                  .build());
-        }
-
-        // Check for keep in lane
-        if (segment.keepInLaneWidth > 0) {
-          constraints.add(
-              Constraint.builder()
-                  .from(Math.max(0, n_waypoint - 1))
-                  .to(n_waypoint + segment.waypoints.size() - 1)
-                  .data(
-                      Map.of(
-                          "type",
-                          "KeepInLane",
-                          "props",
-                          Map.of(
-                              "tolerance",
-                              new ExpVal(segment.keepInLaneWidth + " m", segment.keepInLaneWidth))))
-                  .enabled(true)
-                  .build());
-        }
-
-        // Check for keep out circles
-        if (segment.keepOutCircles.size() > 0) {
-          for (int n_circle = 0; n_circle < segment.keepOutCircles.size(); n_circle++) {
-            constraints.add(
-                Constraint.builder()
-                    .from(Math.max(0, n_waypoint - 1))
-                    .to(n_waypoint + segment.waypoints.size() - 1)
-                    .data(
-                        Map.of(
-                            "type",
-                            "KeepOutCircle",
-                            "props",
-                            Map.of(
-                                "x",
-                                    new ExpVal(
-                                        segment.keepOutCircles.get(n_circle).center().getX() + "m",
-                                        segment.keepOutCircles.get(n_circle).center().getX()),
-                                "y",
-                                    new ExpVal(
-                                        segment.keepOutCircles.get(n_circle).center().getY() + "m",
-                                        segment.keepOutCircles.get(n_circle).center().getY()),
-                                "r",
-                                    new ExpVal(
-                                        segment.keepOutCircles.get(n_circle).radius() + "  ",
-                                        segment.keepOutCircles.get(n_circle).radius()))))
-                    .enabled(true)
-                    .build());
-          }
-        }
-
-        n_waypoint += segment.waypoints.size();
-      }
-
-      // Build root of request
-      TrajFileRoot trajRoot =
-          TrajFileRoot.builder()
-              .name(name)
-              .version(2)
-              .snapshot(new Snapshot(List.of(), List.of(), request.targetDt))
-              .params(
-                  Params.builder()
-                      .waypoints(
-                          request.segments.stream()
-                              .flatMap(segment -> segment.waypoints.stream())
-                              .map(
-                                  pathWaypoint -> {
-                                    return Waypoint.builder()
-                                        .x(
-                                            new ExpVal(
-                                                pathWaypoint.translation.getX() + " m",
-                                                pathWaypoint.translation.getX()))
-                                        .y(
-                                            new ExpVal(
-                                                pathWaypoint.translation.getY() + " m",
-                                                pathWaypoint.translation.getY()))
-                                        .heading(
-                                            pathWaypoint.rotation == null
-                                                ? new ExpVal("0 rad", 0)
-                                                : new ExpVal(
-                                                    pathWaypoint.rotation.getRadians() + " rad",
-                                                    pathWaypoint.rotation.getRadians()))
-                                        .intervals(
-                                            pathWaypoint.intervals > 0
-                                                ? pathWaypoint.intervals
-                                                : 40)
-                                        .split(false)
-                                        .fixTranslation(true)
-                                        .fixHeading(pathWaypoint.rotation != null)
-                                        .overrideIntervals(pathWaypoint.intervals >= 0)
-                                        .build();
-                                  })
-                              .toList())
-                      .constraints(constraints)
-                      .targetDt(new ExpVal(request.targetDt + " s", request.targetDt))
-                      .build())
-              .trajectory(new TrajectorySection(null, null, List.of(), List.of(), List.of()))
-              .events(List.of())
-              .build();
-
-      try {
-        mapper.writeValue(trajFile, trajRoot);
-      } catch (IOException e) {
-        System.out.println("\r" + " ".repeat(120) + "\r" + name + " - JSON Creation FAILED 😬");
-        e.printStackTrace();
-        continue;
-      }
-
-      System.out.print(
-          "\r" + " ".repeat(120) + "\r" + name + " not found or not up-to-date: Generating 🔄");
-
-      try {
-        ChoreoLauncher.generateTrajectory(chorFile, name);
-        System.out.print(
-            "\r" + " ".repeat(120) + "\r" + name + " Path Generated: Adding Hashcode #️⃣");
-      } catch (Exception e) {
-        System.out.println(
-            "\r"
-                + " ".repeat(120)
-                + "\r"
-                + name
-                + ": Choreo Generation FAILED 😬 (Try generating the trajectory in Choreo for details).");
-        System.exit(1);
-      }
-
-      try {
-        JsonNode trajWithHash = mapper.readTree(trajFile);
-        ((ObjectNode) trajWithHash).put("hashcode", getHashCode(robotConfig, request));
-        mapper.writer().writeValue(trajFile, trajWithHash);
-      } catch (IOException e) {
-        System.out.println("\r" + " ".repeat(120) + "\r" + name + ": Hashcode Addition FAILED 😬");
-        e.printStackTrace();
-      }
-
-      completedPaths.add(name);
-      double endTime = System.currentTimeMillis();
-      System.out.println(
-          "\r"
-              + " ".repeat(120)
-              + "\r"
-              + name
-              + ": Generated successfully in "
-              + Math.round((endTime - startTime) / 100.0) / 10.0
-              + " secs ✅");
+    // Check Choreo CLI, download if needed
+    if (!ChoreoLauncher.checkChoreoCLI()) {
+      System.exit(1);
     }
+
+    // Generate trajectories using parallel streams
+    Set<String> completedPaths = ConcurrentHashMap.newKeySet();
+    DriveTrajectories.paths.entrySet().parallelStream()
+        .forEach(
+            entry -> {
+              String name = entry.getKey();
+              PathRequest request = entry.getValue();
+
+              // Check hashcodes
+              File trajFile = Path.of("src", "main", "deploy", "vts", name + ".traj").toFile();
+              try {
+                if (trajFile.exists()
+                    && trajFile.getCanonicalFile().getName().equals(trajFile.getName())
+                    && readTrajHash(trajFile, name) != null
+                    && readTrajHash(trajFile, name).equals(getHashCode(robotConfig, request))) {
+                  completedPaths.add(name);
+                  return;
+                }
+              } catch (IOException e) {
+                // File does not exist, generate
+              }
+
+              // Delete old file
+              if (trajFile.exists()) {
+                trajFile.delete();
+              }
+
+              // Print status
+              double startTime = System.currentTimeMillis();
+
+              // Create list of constraints from segments
+              int n_waypoint = 0;
+              List<Constraint> constraints = new ArrayList<>();
+
+              // Check for stopAtStart
+              if (request.stopAtStart) {
+                constraints.add(
+                    Constraint.builder()
+                        .from("first")
+                        .to(null)
+                        .data(Map.of("type", "StopPoint", "props", Map.of()))
+                        .enabled(true)
+                        .build());
+              }
+
+              // Check for stopAtEnd
+              if (request.stopAtEnd) {
+                constraints.add(
+                    Constraint.builder()
+                        .from("last")
+                        .to(null)
+                        .data(Map.of("type", "StopPoint", "props", Map.of()))
+                        .enabled(true)
+                        .build());
+              }
+
+              for (int i = 0; i < request.segments.size(); i++) {
+                PathRequestSegment segment = request.segments.get(i);
+
+                // Check for waypoints that are marked as stop points
+                for (int j = 0; j < segment.waypoints.size(); j++) {
+                  if (segment.waypoints.get(j).stopped) {
+                    constraints.add(
+                        Constraint.builder()
+                            .from(n_waypoint + j)
+                            .to(null)
+                            .data(Map.of("type", "StopPoint", "props", Map.of()))
+                            .enabled(true)
+                            .build());
+                  }
+                }
+                // Check for max velocity
+                if (segment.maxVelocity >= 0) {
+                  constraints.add(
+                      Constraint.builder()
+                          .from(Math.max(0, n_waypoint - 1))
+                          .to(n_waypoint + segment.waypoints.size() - 1)
+                          .data(
+                              Map.of(
+                                  "type",
+                                  "MaxVelocity",
+                                  "props",
+                                  Map.of(
+                                      "max",
+                                      Map.of(
+                                          "exp",
+                                          segment.maxVelocity + " m / s",
+                                          "val",
+                                          segment.maxVelocity))))
+                          .enabled(true)
+                          .build());
+                }
+                // Check for max acceleration
+                if (segment.maxAcceleration >= 0) {
+                  constraints.add(
+                      Constraint.builder()
+                          .from(Math.max(0, n_waypoint - 1))
+                          .to(n_waypoint + segment.waypoints.size() - 1)
+                          .data(
+                              Map.of(
+                                  "type",
+                                  "MaxAcceleration",
+                                  "props",
+                                  Map.of(
+                                      "max",
+                                      Map.of(
+                                          "exp",
+                                          segment.maxAcceleration + " m / s ^ 2",
+                                          "val",
+                                          segment.maxAcceleration))))
+                          .enabled(true)
+                          .build());
+                }
+                // Check for max angular velocity
+                if (segment.maxAngularVelocity >= 0) {
+                  constraints.add(
+                      Constraint.builder()
+                          .from(Math.max(0, n_waypoint - 1))
+                          .to(n_waypoint + segment.waypoints.size() - 1)
+                          .data(
+                              Map.of(
+                                  "type",
+                                  "MaxAngularVelocity",
+                                  "props",
+                                  Map.of(
+                                      "max",
+                                      Map.of(
+                                          "exp",
+                                          segment.maxAngularVelocity + " rad / s",
+                                          "val",
+                                          segment.maxAngularVelocity))))
+                          .enabled(true)
+                          .build());
+                }
+
+                // Check for point at
+                if (segment.pointAt != null) {
+                  constraints.add(
+                      Constraint.builder()
+                          .from(Math.max(0, n_waypoint - 1))
+                          .to(n_waypoint + segment.waypoints.size() - 1)
+                          .data(
+                              Map.of(
+                                  "type",
+                                  "PointAt",
+                                  "props",
+                                  Map.of(
+                                      "x",
+                                      new ExpVal(
+                                          segment.pointAt.target().getX() + "m",
+                                          segment.pointAt.target().getX()),
+                                      "y",
+                                      new ExpVal(
+                                          segment.pointAt.target().getY() + "m",
+                                          segment.pointAt.target().getY()),
+                                      "tolerance",
+                                      new ExpVal(
+                                          segment.pointAt.tolerance().getRadians() + " rad",
+                                          segment.pointAt.tolerance().getRadians()),
+                                      "flip",
+                                      segment.pointAt.flip())))
+                          .enabled(true)
+                          .build());
+                }
+
+                // Check for keep in lane
+                if (segment.keepInLaneWidth > 0) {
+                  constraints.add(
+                      Constraint.builder()
+                          .from(Math.max(0, n_waypoint - 1))
+                          .to(n_waypoint + segment.waypoints.size() - 1)
+                          .data(
+                              Map.of(
+                                  "type",
+                                  "KeepInLane",
+                                  "props",
+                                  Map.of(
+                                      "tolerance",
+                                      new ExpVal(
+                                          segment.keepInLaneWidth + " m",
+                                          segment.keepInLaneWidth))))
+                          .enabled(true)
+                          .build());
+                }
+
+                // Check for keep out circles
+                if (segment.keepOutCircles.size() > 0) {
+                  for (int n_circle = 0; n_circle < segment.keepOutCircles.size(); n_circle++) {
+                    constraints.add(
+                        Constraint.builder()
+                            .from(Math.max(0, n_waypoint - 1))
+                            .to(n_waypoint + segment.waypoints.size() - 1)
+                            .data(
+                                Map.of(
+                                    "type",
+                                    "KeepOutCircle",
+                                    "props",
+                                    Map.of(
+                                        "x",
+                                            new ExpVal(
+                                                segment.keepOutCircles.get(n_circle).center().getX()
+                                                    + "m",
+                                                segment
+                                                    .keepOutCircles
+                                                    .get(n_circle)
+                                                    .center()
+                                                    .getX()),
+                                        "y",
+                                            new ExpVal(
+                                                segment.keepOutCircles.get(n_circle).center().getY()
+                                                    + "m",
+                                                segment
+                                                    .keepOutCircles
+                                                    .get(n_circle)
+                                                    .center()
+                                                    .getY()),
+                                        "r",
+                                            new ExpVal(
+                                                segment.keepOutCircles.get(n_circle).radius()
+                                                    + "  ",
+                                                segment.keepOutCircles.get(n_circle).radius()))))
+                            .enabled(true)
+                            .build());
+                  }
+                }
+
+                n_waypoint += segment.waypoints.size();
+              }
+
+              // Build root of request
+              TrajFileRoot trajRoot =
+                  TrajFileRoot.builder()
+                      .name(name)
+                      .version(2)
+                      .snapshot(new Snapshot(List.of(), List.of(), request.targetDt))
+                      .params(
+                          Params.builder()
+                              .waypoints(
+                                  request.segments.stream()
+                                      .flatMap(segment -> segment.waypoints.stream())
+                                      .map(
+                                          pathWaypoint -> {
+                                            return Waypoint.builder()
+                                                .x(
+                                                    new ExpVal(
+                                                        pathWaypoint.translation.getX() + " m",
+                                                        pathWaypoint.translation.getX()))
+                                                .y(
+                                                    new ExpVal(
+                                                        pathWaypoint.translation.getY() + " m",
+                                                        pathWaypoint.translation.getY()))
+                                                .heading(
+                                                    pathWaypoint.rotation == null
+                                                        ? new ExpVal("0 rad", 0)
+                                                        : new ExpVal(
+                                                            pathWaypoint.rotation.getRadians()
+                                                                + " rad",
+                                                            pathWaypoint.rotation.getRadians()))
+                                                .intervals(
+                                                    pathWaypoint.intervals > 0
+                                                        ? pathWaypoint.intervals
+                                                        : 40)
+                                                .split(false)
+                                                .fixTranslation(true)
+                                                .fixHeading(pathWaypoint.rotation != null)
+                                                .overrideIntervals(pathWaypoint.intervals >= 0)
+                                                .build();
+                                          })
+                                      .toList())
+                              .constraints(constraints)
+                              .targetDt(new ExpVal(request.targetDt + " s", request.targetDt))
+                              .build())
+                      .trajectory(
+                          new TrajectorySection(null, null, List.of(), List.of(), List.of()))
+                      .events(List.of())
+                      .build();
+
+              try {
+                mapper.writeValue(trajFile, trajRoot);
+              } catch (IOException e) {
+                System.out.println(name + ": JSON Creation FAILED 😬");
+                e.printStackTrace();
+                return;
+              }
+
+              System.out.println(name + ": Generating 🔄");
+
+              try {
+                ChoreoLauncher.generateTrajectory(chorFile, name);
+              } catch (Exception e) {
+                System.out.println(
+                    name
+                        + ": Choreo Generation FAILED 😬 (Try generating the trajectory in Choreo for details).");
+                System.exit(1);
+              }
+
+              try {
+                JsonNode trajWithHash = mapper.readTree(trajFile);
+                ((ObjectNode) trajWithHash).put("hashcode", getHashCode(robotConfig, request));
+                mapper.writer().writeValue(trajFile, trajWithHash);
+              } catch (IOException e) {
+                System.out.println(name + ": Hashcode Addition FAILED 😬");
+                e.printStackTrace();
+              }
+
+              completedPaths.add(name);
+              double endTime = System.currentTimeMillis();
+              System.out.println(
+                  name
+                      + ": Generated successfully in "
+                      + Math.round((endTime - startTime) / 100.0) / 10.0
+                      + " secs ✅");
+            });
 
     // Delete old trajectories
     try {
@@ -460,14 +464,13 @@ public class GenerateTrajectories {
                     && !completedPaths.contains(components[0])
                     && !filename.equals("VTS.chor")) {
                   path.toFile().delete();
-                  System.out.println(
-                      "\r" + " ".repeat(120) + "\r" + components[0] + " - Deleted 🫡");
+                  System.out.println(components[0] + ": Deleted 🫡");
                 }
               });
     } catch (IOException e) {
       e.printStackTrace();
     }
-    System.out.println("\r" + " ".repeat(120) + "\r\nAll trajectories up-to-date!");
+    System.out.println("All trajectories up-to-date! 👍");
   }
 
   private static String readTrajHash(File pathFile, String name) {
@@ -475,8 +478,7 @@ public class GenerateTrajectories {
       JsonNode hashcode = mapper.readTree(pathFile).get("hashcode");
       return hashcode.asText();
     } catch (Exception e) {
-      System.out.print(
-          "\r" + " ".repeat(120) + "\r" + name + " Hashcode not found: Regenerating 🔄");
+      System.out.println(name + " Hashcode not found: Regenerating 🔄");
     }
     return null;
   }

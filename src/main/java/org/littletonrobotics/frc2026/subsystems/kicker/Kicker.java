@@ -46,6 +46,9 @@ public class Kicker extends FullSubsystem {
   private static final LoggedTunableNumber backkV =
       new LoggedTunableNumber("Kicker/RollerBack/kV", 0.0575);
 
+  private static final LoggedTunableNumber blearghhSurfaceSpeed =
+      new LoggedTunableNumber("Kicker/BlearghhSurfaceSpeed", 6.0);
+
   private final RollerSystem rollerFront;
   private final RollerSystem rollerBack;
   private final Optional<SimFuelCount> simFuelCount;
@@ -102,6 +105,10 @@ public class Kicker extends FullSubsystem {
         rollerFront.runClosedLoop(frontSetpointSpeed);
         rollerBack.runClosedLoop(backSetpointSpeed);
       }
+      case BLEARGHH -> {
+        rollerFront.runClosedLoop(blearghhSurfaceSpeed.get() / frontRollerRadius);
+        rollerBack.runClosedLoop(blearghhSurfaceSpeed.get() / backRollerRadius);
+      }
       case OUTTAKE -> {
         rollerFront.runClosedLoop(frontSetpointSpeed * -1.0);
         rollerBack.runClosedLoop(backSetpointSpeed * -1.0);
@@ -133,6 +140,7 @@ public class Kicker extends FullSubsystem {
 
   public enum Goal {
     LAUNCH,
+    BLEARGHH,
     OUTTAKE,
     STOP
   }

@@ -103,6 +103,7 @@ public class LaunchCalculator {
   public static final LaunchPreset towerPreset;
   public static final LaunchPreset trenchPreset;
   public static final LaunchPreset outpostPreset;
+  public static final LaunchPreset blearghhPreset;
   public static final LaunchPreset hoodMinPreset =
       new LaunchPreset(
           new LoggedTunableNumber(
@@ -235,6 +236,11 @@ public class LaunchCalculator {
             new LoggedTunableNumber(
                 "LaunchCalculator/Presets/Outpost/FlywheelSpeed",
                 flywheelSpeedMap.get(outpostPresetDistance)));
+    blearghhPreset =
+        new LaunchPreset(
+            new LoggedTunableNumber(
+                "LaunchCalculator/Presets/Blearghh/HoodAngle", Units.radiansToDegrees(30.0)),
+            new LoggedTunableNumber("LaunchCalculator/Presets/Blearghh/FlywheelSpeed", 120));
   }
 
   public static double getMinTimeOfFlight() {
