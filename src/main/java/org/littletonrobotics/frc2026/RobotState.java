@@ -58,7 +58,9 @@ public class RobotState {
         new SwerveModulePosition(),
         new SwerveModulePosition()
       };
-  private Rotation2d gyroOffset = Rotation2d.kZero;
+
+  private Optional<Rotation2d> lastTheta = Optional.empty();
+  private Optional<Rotation2d> lastFallbackTheta = Optional.empty();
 
   @Getter @Setter private ChassisSpeeds robotVelocity = new ChassisSpeeds();
   @Getter @Setter private ChassisSpeeds robotSetpointVelocity = new ChassisSpeeds();
@@ -83,9 +85,6 @@ public class RobotState {
 
   /** Reset the pose estimate and odometry pose to the given pose. */
   public void resetPose(Pose2d pose) {
-    // Gyro offset is the rotation that maps the old gyro rotation (estimated - offset) to the new
-    // frame of rotation
-    gyroOffset = pose.getRotation().minus(odometryPose.getRotation().minus(gyroOffset));
     estimatedPose = pose;
     odometryPose = pose;
     poseBuffer.clear();
@@ -134,7 +133,8 @@ public class RobotState {
   public void addOdometryObservation(OdometryObservation observation) {
     // Logic to scale down odometry
     var t = 1.0;
-    if (observation.pitch().isPresent() && observation.roll().isPresent()) {
+    if ((observation.pitch().isPresent() && observation.roll().isPresent())
+        || (observation.fallbackPitch().isPresent() && observation.fallbackRoll().isPresent())) {
       t =
           1
               - (MathUtil.inverseInterpolate(
@@ -143,41 +143,51 @@ public class RobotState {
                   Math.abs(
                       Units.radiansToDegrees(
                           Math.acos(
-                              observation.pitch().get().getCos()
-                                  * observation.roll().get().getCos())))));
+                              observation.pitch().isPresent()
+                                  ? observation.pitch().get().getCos()
+                                      * observation.roll().get().getCos()
+                                  : observation.fallbackPitch().get().getCos()
+                                      * observation.fallbackRoll().get().getCos())))));
     }
     t = MathUtil.clamp(t, 0.0, 1.0);
 
-    // Update odometry pose
+    // Construct initial twist from kinematics
     Twist2d twist = kinematics.toTwist2d(lastWheelPositions, observation.wheelPositions());
-    twist = new Twist2d(twist.dx * t, twist.dy * t, twist.dtheta * t);
     lastWheelPositions = observation.wheelPositions();
-    Pose2d lastOdometryPose = odometryPose;
-    odometryPose = odometryPose.exp(twist);
+    twist = new Twist2d(twist.dx * t, twist.dy * t, twist.dtheta);
 
-    // Replace odometry pose with gyro if present
-    observation.yaw.ifPresent(
-        gyroAngle -> {
-          // Add offset to measured angle
-          Rotation2d angle = gyroAngle.plus(gyroOffset);
-          odometryPose = new Pose2d(odometryPose.getTranslation(), angle);
-        });
+    // Override dtheta if gyro data is available
+    double dtheta = twist.dtheta;
+    if (observation.yaw().isPresent() && lastTheta.isPresent()) {
+      dtheta = observation.yaw().get().minus(lastTheta.get()).getRadians();
+    } else if (observation.fallbackYaw().isPresent() && lastFallbackTheta.isPresent()) {
+      dtheta = observation.fallbackYaw().get().minus(lastFallbackTheta.get()).getRadians();
+    }
+    lastTheta = observation.yaw();
+    lastFallbackTheta = observation.fallbackYaw();
+    twist = new Twist2d(twist.dx, twist.dy, dtheta);
+
+    // Apply twist to odometry and estimated poses
+    odometryPose = odometryPose.exp(twist);
+    estimatedPose = estimatedPose.exp(twist);
 
     // Add pose to buffer at timestamp
     poseBuffer.addSample(observation.timestamp(), odometryPose);
 
     // Add rotation to buffer at timestamp
-    if (observation.roll.isPresent()) {
+    if (observation.yaw().isPresent() || observation.fallbackYaw().isPresent()) {
       rotationBuffer.addSample(
           observation.timestamp(),
-          new Rotation3d(
-              observation.roll.get().getRadians(),
-              observation.pitch.get().getRadians(),
-              observation.yaw.get().getRadians()));
+          observation.yaw().isPresent()
+              ? new Rotation3d(
+                  observation.roll.get().getRadians(),
+                  observation.pitch.get().getRadians(),
+                  observation.yaw.get().getRadians())
+              : new Rotation3d(
+                  observation.fallbackRoll.get().getRadians(),
+                  observation.fallbackPitch.get().getRadians(),
+                  observation.fallbackYaw.get().getRadians()));
     }
-    // Apply odometry delta to vision pose estimate
-    Twist2d finalTwist = lastOdometryPose.log(odometryPose);
-    estimatedPose = estimatedPose.exp(finalTwist);
   }
 
   public void addSlamObservation(SlamObservation observation) {
@@ -279,7 +289,10 @@ public class RobotState {
       SwerveModulePosition[] wheelPositions,
       Optional<Rotation2d> roll,
       Optional<Rotation2d> pitch,
-      Optional<Rotation2d> yaw) {}
+      Optional<Rotation2d> yaw,
+      Optional<Rotation2d> fallbackRoll,
+      Optional<Rotation2d> fallbackPitch,
+      Optional<Rotation2d> fallbackYaw) {}
 
   public record VisionObservation(double timestamp, Pose3d visionPose, Matrix<N3, N1> stdDevs) {}
 

@@ -167,6 +167,7 @@ public class RobotContainer {
           drive =
               new Drive(
                   new GyroIO() {},
+                  new GyroIO() {},
                   new ModuleIOSim(0),
                   new ModuleIOSim(1),
                   new ModuleIOSim(2),
@@ -191,6 +192,7 @@ public class RobotContainer {
     if (drive == null) {
       drive =
           new Drive(
+              new GyroIO() {},
               new GyroIO() {},
               new ModuleIO() {},
               new ModuleIO() {},

@@ -41,6 +41,7 @@ public class DriveConstants {
 
   public static final String darwinCanBus = "*";
   public static final int darwinGyroId = 30;
+  public static final int darwinBackupGyroId = 31;
   public static final int darwinDriveMotorIdFL = 0;
   public static final int darwinDriveMotorIdFR = 11;
   public static final int darwinDriveMotorIdBL = 23;

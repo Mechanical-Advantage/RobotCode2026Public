@@ -34,10 +34,17 @@ import org.littletonrobotics.junction.Logger;
 public class Drive extends FullSubsystem {
   static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
+  private final GyroIO backupGyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
+  private final GyroIOInputsAutoLogged backupGyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
   private final Alert gyroDisconnectedAlert =
-      new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
+      new Alert("Disconnected gyro, using backup gyro as fallback.", AlertType.kError);
+  private final Alert backupGyroDisconnectedAlert =
+      new Alert("Disconnected backup gyro, using primary.", AlertType.kInfo);
+  private final Alert gyroAndBackupGyroDisconnectedAlert =
+      new Alert(
+          "Disconnected gyro and backup gyro, using kinematics as fallback.", AlertType.kError);
 
   private static final LoggedTunableNumber coastWaitTime =
       new LoggedTunableNumber("Drive/CoastWaitTimeSeconds", 0.5);
@@ -62,11 +69,13 @@ public class Drive extends FullSubsystem {
 
   public Drive(
       GyroIO gyroIO,
+      GyroIO backupGyroIO,
       ModuleIO flModuleIO,
       ModuleIO frModuleIO,
       ModuleIO blModuleIO,
       ModuleIO brModuleIO) {
     this.gyroIO = gyroIO;
+    this.backupGyroIO = backupGyroIO;
     modules[0] = new Module(flModuleIO, 0);
     modules[1] = new Module(frModuleIO, 1);
     modules[2] = new Module(blModuleIO, 2);
@@ -81,8 +90,10 @@ public class Drive extends FullSubsystem {
   public void periodic() {
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
+    backupGyroIO.updateInputs(backupGyroInputs);
     LoggedTracer.record("Drive/GyroInputs");
     Logger.processInputs("Drive/Gyro", gyroInputs);
+    Logger.processInputs("Drive/BackupGyro", backupGyroInputs);
     for (var module : modules) {
       module.periodic();
     }
@@ -107,12 +118,23 @@ public class Drive extends FullSubsystem {
                   getModulePositions(),
                   Optional.ofNullable(gyroInputs.connected ? gyroInputs.rollPosition : null),
                   Optional.ofNullable(gyroInputs.connected ? gyroInputs.pitchPosition : null),
-                  Optional.ofNullable(gyroInputs.connected ? gyroInputs.yawPosition : null)));
+                  Optional.ofNullable(gyroInputs.connected ? gyroInputs.yawPosition : null),
+                  Optional.ofNullable(
+                      backupGyroInputs.connected ? backupGyroInputs.rollPosition : null),
+                  Optional.ofNullable(
+                      backupGyroInputs.connected ? backupGyroInputs.pitchPosition : null),
+                  Optional.ofNullable(
+                      backupGyroInputs.connected ? backupGyroInputs.yawPosition : null)));
     }
     RobotState.getInstance().setRobotVelocity(getChassisSpeeds());
 
-    // Update gyro alert
-    gyroDisconnectedAlert.set(Robot.showHardwareAlerts() && !gyroInputs.connected);
+    // Update gyro alerts
+    gyroDisconnectedAlert.set(
+        Robot.showHardwareAlerts() && !gyroInputs.connected && backupGyroInputs.connected);
+    backupGyroDisconnectedAlert.set(
+        Robot.showHardwareAlerts() && gyroInputs.connected && !backupGyroInputs.connected);
+    gyroAndBackupGyroDisconnectedAlert.set(
+        Robot.showHardwareAlerts() && !gyroInputs.connected && !backupGyroInputs.connected);
 
     // Update brake mode
     if (Arrays.stream(modules)
