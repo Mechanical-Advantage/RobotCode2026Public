@@ -57,6 +57,21 @@ public class AutoCommands {
       new LoggedTunableNumber("AutoCommands/Launching/kD", 0.5);
   public static final double bumpCrossTime = 1.5;
 
+  // MARK: NZ Sweeps
+  public static Command rushToCenter(Drive drive, double time, boolean slow) {
+    return Commands.run(
+            () ->
+                drive.runVelocity(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        AllianceFlipUtil.shouldFlip()
+                            ? -DriveConstants.maxLinearSpeed * (slow ? 0.6 : 1.0)
+                            : DriveConstants.maxLinearSpeed * (slow ? 0.6 : 1.0),
+                        0.0,
+                        0.0,
+                        RobotState.getInstance().getRotation())))
+        .withTimeout(Constants.getMode().equals(Mode.SIM) ? 0.7 : time);
+  }
+
   // Drives to corner of fuel pool to set up neutral zone intaking
   public static Command salesmanTurn(Drive drive, Supplier<AutoQuestionResponse> side) {
     return driveToPose(
@@ -88,6 +103,78 @@ public class AutoCommands {
         .withTimeout(1.0);
   }
 
+  public static Bounds expandBounds(Bounds a, Bounds b) {
+    return new Bounds(
+        Math.min(a.minX(), b.minX()),
+        Math.max(a.maxX(), b.maxX()),
+        Math.min(a.minY(), b.minY()),
+        Math.max(a.maxY(), b.maxY()));
+  }
+
+  public static Bounds getDynamicBounds(
+      Supplier<AutoQuestionResponse> returnSide, boolean ethical) {
+    Set<Translation2d> otherRobots = ObjectDetection.getInstance().getRobotTranslations();
+
+    // Define quadrants of the neutral zone
+    double minX = FieldConstants.LinesVertical.neutralZoneNear;
+    double maxX = FieldConstants.LinesVertical.neutralZoneFar;
+    double midX = (minX + maxX) / 2.0;
+    double minY = 0.0;
+    double maxY = FieldConstants.fieldWidth;
+    double midY = (minY + maxY) / 2.0;
+    Bounds[] quadrants = {
+      new Bounds(minX, midX, minY, midY),
+      new Bounds(minX, midX, midY, maxY),
+      new Bounds(midX, maxX, minY, midY),
+      new Bounds(midX, maxX, midY, maxY)
+    };
+
+    // Create dynamic names for quadrants based on alliance color and return side
+    int homeIndex =
+        AllianceFlipUtil.shouldFlip()
+            ? (returnSide.get().equals(AutoQuestionResponse.LEFT_BUMP)
+                    || returnSide.get().equals(AutoQuestionResponse.LEFT_TRENCH)
+                    || returnSide.get().equals(AutoQuestionResponse.LEFT_NO_TRENCH)
+                ? 2
+                : 3)
+            : (returnSide.get().equals(AutoQuestionResponse.LEFT_BUMP)
+                    || returnSide.get().equals(AutoQuestionResponse.LEFT_TRENCH)
+                    || returnSide.get().equals(AutoQuestionResponse.LEFT_NO_TRENCH)
+                ? 1
+                : 0);
+    Logger.recordOutput("AutoCommands/DynamicBounds/HomeIndex", homeIndex);
+
+    Bounds homeBounds = quadrants[homeIndex];
+    Bounds allyAdjacent = quadrants[homeIndex ^ 1];
+    Bounds opponentAdjacent = quadrants[homeIndex ^ 2];
+    Bounds opponentFar = quadrants[homeIndex ^ 3];
+
+    // Expand into other side of near neutral zone if empty
+    if (!otherRobots.stream().anyMatch(robot -> allyAdjacent.contains(robot))) {
+      homeBounds = expandBounds(homeBounds, allyAdjacent);
+      if (!otherRobots.stream().anyMatch(robot -> opponentAdjacent.contains(robot))
+          && !otherRobots.stream().anyMatch(robot -> opponentFar.contains(robot))
+          && !ethical) {
+        homeBounds = expandBounds(homeBounds, opponentFar);
+      }
+    } else {
+      if (!otherRobots.stream().anyMatch(robot -> opponentAdjacent.contains(robot)) && !ethical) {
+        homeBounds = expandBounds(homeBounds, opponentAdjacent);
+      }
+    }
+
+    Logger.recordOutput("AutoCommands/DynamicBounds/Outline", homeBounds.sides());
+
+    // Shift bounds past centerline
+    return new Bounds(
+        homeBounds.minX(),
+        Math.max(
+            homeBounds.maxX(), FieldConstants.LinesVertical.center + DriveConstants.fullApothemX),
+        homeBounds.minY(),
+        homeBounds.maxY());
+  }
+
+  // MARK: Return to AZ
   /** Returns to the alliance zone from the closest side */
   public static Command returnToClosestLaunchPose(Drive drive) {
     return returnToDeterminedLaunchPose(
@@ -166,6 +253,58 @@ public class AutoCommands {
         });
   }
 
+  public static Command returnLaunchAndIndexMindfully(
+      Drive drive,
+      Hopper hopper,
+      Kicker kicker,
+      Flywheel flywheel,
+      Slamtake slamtake,
+      boolean launchHastily,
+      Supplier<AutoQuestionResponse> launchTarget,
+      BooleanSupplier readyToLeave) {
+    Timer launchTimer = new Timer();
+    return driveToPose(
+            drive,
+            () ->
+                launchTarget.get().equals(AutoQuestionResponse.LEFT_BUMP)
+                        || launchTarget.get().equals(AutoQuestionResponse.RIGHT_BUMP)
+                    ? isLeftSide(launchTarget).getAsBoolean() ? Launch.leftBump : Launch.rightBump
+                    : isLeftSide(launchTarget).getAsBoolean()
+                        ? Launch.leftTrench
+                        : Launch.rightTrench)
+        .until(
+            () ->
+                xCrossed(
+                    FieldConstants.LinesVertical.starting - DriveConstants.fullBaseRadius, false))
+        .andThen(
+            new DriveToPose(
+                    drive,
+                    () ->
+                        LaunchCalculator.getStationaryAimedPose(
+                            RobotState.getInstance().getEstimatedPose().getTranslation(), false))
+                .withDeadline(
+                    Commands.sequence(
+                        Commands.runOnce(() -> launchTimer.restart()),
+                        indexMindfully(
+                                hopper,
+                                kicker,
+                                flywheel,
+                                slamtake,
+                                () ->
+                                    AutoCommands.withinLaunchingTolerance(
+                                        Rotation2d.fromDegrees(8.0)),
+                                launchHastily)
+                            .withDeadline(
+                                Commands.waitUntil(
+                                    () ->
+                                        launchTimer.hasElapsed(
+                                                launchHastily
+                                                    ? AutoBuilder.depotLaunchTime
+                                                    : AutoBuilder.launchTime)
+                                            && readyToLeave.getAsBoolean())))));
+  }
+
+  // MARK: LOTM Angle
   private static Double launchOnTheMoveOmega() {
     // Run PID controller
     final var parameters = LaunchCalculator.getInstance().getParameters();
@@ -180,6 +319,7 @@ public class AutoCommands {
         DriveConstants.maxAngularSpeed);
   }
 
+  // MARK: Traj Follower
   public static Command followTrajectory(String name, Drive drive, boolean start) {
     return followTrajectory(name, drive, start, () -> false);
   }
@@ -236,6 +376,7 @@ public class AutoCommands {
     }
   }
 
+  // MARK: Coast
   public static Command driveToCoastTarget(
       Drive drive,
       Supplier<AutoQuestionResponse> coastTarget,
@@ -267,85 +408,18 @@ public class AutoCommands {
         Commands.select(
             Map.of(
                 AutoQuestionResponse.HUB,
-                followTrajectory(
-                    "launchLeftTrenchThroughTrenchToFarHubKachow", drive, false, mirror),
+                followTrajectory("launchLeftTrenchToFarHubKachow", drive, false, mirror),
                 AutoQuestionResponse.BUMP,
-                followTrajectory(
-                    "launchLeftTrenchThroughTrenchToFarBumpKachow", drive, false, mirror),
+                followTrajectory("launchLeftTrenchToFarBumpKachow", drive, false, mirror),
                 AutoQuestionResponse.TRENCH,
-                followTrajectory(
-                    "launchLeftTrenchThroughTrenchToFarTrenchKachow", drive, false, mirror),
+                followTrajectory("launchLeftTrenchToFarTrenchKachow", drive, false, mirror),
                 AutoQuestionResponse.NONE,
                 Commands.idle()),
             coastTarget),
         isBump);
   }
 
-  public static Command rushToCenter(Drive drive, double time, boolean slow) {
-    return Commands.run(
-            () ->
-                drive.runVelocity(
-                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                        AllianceFlipUtil.shouldFlip()
-                            ? -DriveConstants.maxLinearSpeed * (slow ? 0.6 : 1.0)
-                            : DriveConstants.maxLinearSpeed * (slow ? 0.6 : 1.0),
-                        0.0,
-                        0.0,
-                        RobotState.getInstance().getRotation())))
-        .withTimeout(Constants.getMode().equals(Mode.SIM) ? 0.7 : time);
-  }
-
-  public static Command returnLaunchAndIndexMindfully(
-      Drive drive,
-      Hopper hopper,
-      Kicker kicker,
-      Flywheel flywheel,
-      Slamtake slamtake,
-      boolean launchHastily,
-      Supplier<AutoQuestionResponse> launchTarget,
-      BooleanSupplier readyToLeave) {
-    Timer launchTimer = new Timer();
-    return driveToPose(
-            drive,
-            () ->
-                launchTarget.get().equals(AutoQuestionResponse.LEFT_BUMP)
-                        || launchTarget.get().equals(AutoQuestionResponse.RIGHT_BUMP)
-                    ? isLeftSide(launchTarget).getAsBoolean() ? Launch.leftBump : Launch.rightBump
-                    : isLeftSide(launchTarget).getAsBoolean()
-                        ? Launch.leftTrench
-                        : Launch.rightTrench)
-        .until(
-            () ->
-                xCrossed(
-                    FieldConstants.LinesVertical.starting - DriveConstants.fullBaseRadius, false))
-        .andThen(
-            new DriveToPose(
-                    drive,
-                    () ->
-                        LaunchCalculator.getStationaryAimedPose(
-                            RobotState.getInstance().getEstimatedPose().getTranslation(), false))
-                .withDeadline(
-                    Commands.sequence(
-                        Commands.runOnce(() -> launchTimer.restart()),
-                        indexMindfully(
-                                hopper,
-                                kicker,
-                                flywheel,
-                                slamtake,
-                                () ->
-                                    AutoCommands.withinLaunchingTolerance(
-                                        Rotation2d.fromDegrees(8.0)),
-                                launchHastily)
-                            .withDeadline(
-                                Commands.waitUntil(
-                                    () ->
-                                        launchTimer.hasElapsed(
-                                                launchHastily
-                                                    ? AutoBuilder.depotLaunchTime
-                                                    : AutoBuilder.launchTime)
-                                            && readyToLeave.getAsBoolean())))));
-  }
-
+  // MARK: Indexing
   public static Command index(Hopper hopper, Kicker kicker, Flywheel flywheel, Slamtake slamtake) {
     return Commands.waitUntil(flywheel::atGoal)
         .andThen(
@@ -412,6 +486,7 @@ public class AutoCommands {
         .finallyDo(() -> slamtake.setSlamGoal(SlamGoal.RETRACT));
   }
 
+  // MARK: Passing
   public static Translation2d keepOutX(Bounds bounds, Translation2d translation) {
     return new Translation2d(
         translation.getX() <= bounds.minX() || translation.getX() >= bounds.maxX()
@@ -482,77 +557,7 @@ public class AutoCommands {
                 index(hopper, kicker, flywheel, slamtake).withTimeout(launchTime)));
   }
 
-  public static Bounds expandBounds(Bounds a, Bounds b) {
-    return new Bounds(
-        Math.min(a.minX(), b.minX()),
-        Math.max(a.maxX(), b.maxX()),
-        Math.min(a.minY(), b.minY()),
-        Math.max(a.maxY(), b.maxY()));
-  }
-
-  public static Bounds getDynamicBounds(
-      Supplier<AutoQuestionResponse> returnSide, boolean ethical) {
-    Set<Translation2d> otherRobots = ObjectDetection.getInstance().getRobotTranslations();
-
-    // Define quadrants of the neutral zone
-    double minX = FieldConstants.LinesVertical.neutralZoneNear;
-    double maxX = FieldConstants.LinesVertical.neutralZoneFar;
-    double midX = (minX + maxX) / 2.0;
-    double minY = 0.0;
-    double maxY = FieldConstants.fieldWidth;
-    double midY = (minY + maxY) / 2.0;
-    Bounds[] quadrants = {
-      new Bounds(minX, midX, minY, midY),
-      new Bounds(minX, midX, midY, maxY),
-      new Bounds(midX, maxX, minY, midY),
-      new Bounds(midX, maxX, midY, maxY)
-    };
-
-    // Create dynamic names for quadrants based on alliance color and return side
-    int homeIndex =
-        AllianceFlipUtil.shouldFlip()
-            ? (returnSide.get().equals(AutoQuestionResponse.LEFT_BUMP)
-                    || returnSide.get().equals(AutoQuestionResponse.LEFT_TRENCH)
-                    || returnSide.get().equals(AutoQuestionResponse.LEFT_NO_TRENCH)
-                ? 2
-                : 3)
-            : (returnSide.get().equals(AutoQuestionResponse.LEFT_BUMP)
-                    || returnSide.get().equals(AutoQuestionResponse.LEFT_TRENCH)
-                    || returnSide.get().equals(AutoQuestionResponse.LEFT_NO_TRENCH)
-                ? 1
-                : 0);
-    Logger.recordOutput("AutoCommands/DynamicBounds/HomeIndex", homeIndex);
-
-    Bounds homeBounds = quadrants[homeIndex];
-    Bounds allyAdjacent = quadrants[homeIndex ^ 1];
-    Bounds opponentAdjacent = quadrants[homeIndex ^ 2];
-    Bounds opponentFar = quadrants[homeIndex ^ 3];
-
-    // Expand into other side of near neutral zone if empty
-    if (!otherRobots.stream().anyMatch(robot -> allyAdjacent.contains(robot))) {
-      homeBounds = expandBounds(homeBounds, allyAdjacent);
-      if (!otherRobots.stream().anyMatch(robot -> opponentAdjacent.contains(robot))
-          && !otherRobots.stream().anyMatch(robot -> opponentFar.contains(robot))
-          && !ethical) {
-        homeBounds = expandBounds(homeBounds, opponentFar);
-      }
-    } else {
-      if (!otherRobots.stream().anyMatch(robot -> opponentAdjacent.contains(robot)) && !ethical) {
-        homeBounds = expandBounds(homeBounds, opponentAdjacent);
-      }
-    }
-
-    Logger.recordOutput("AutoCommands/DynamicBounds/Outline", homeBounds.sides());
-
-    // Shift bounds past centerline
-    return new Bounds(
-        homeBounds.minX(),
-        Math.max(
-            homeBounds.maxX(), FieldConstants.LinesVertical.center + DriveConstants.fullApothemX),
-        homeBounds.minY(),
-        homeBounds.maxY());
-  }
-
+  // MARK: Helper Methods
   public static BooleanSupplier isLeftSide(AutoQuestionResponse side) {
     return () ->
         side.equals(AutoQuestionResponse.LEFT)
