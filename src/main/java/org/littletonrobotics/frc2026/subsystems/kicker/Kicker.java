@@ -113,6 +113,14 @@ public class Kicker extends FullSubsystem {
         rollerFront.runClosedLoop(frontSetpointSpeed * -1.0);
         rollerBack.runClosedLoop(backSetpointSpeed * -1.0);
       }
+      case TEST_FRONT -> {
+        rollerFront.runClosedLoop(frontSetpointSpeed);
+        rollerBack.runOpenLoop(0.0);
+      }
+      case TEST_BACK -> {
+        rollerFront.runOpenLoop(0.0);
+        rollerBack.runClosedLoop(backSetpointSpeed);
+      }
       case STOP -> {
         rollerFront.runOpenLoop(0.0);
         rollerBack.runOpenLoop(0.0);
@@ -142,6 +150,8 @@ public class Kicker extends FullSubsystem {
     LAUNCH,
     BLEARGHH,
     OUTTAKE,
+    TEST_FRONT,
+    TEST_BACK,
     STOP
   }
 }

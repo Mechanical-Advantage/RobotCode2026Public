@@ -66,7 +66,7 @@ public class Flywheel extends FullSubsystem {
   private static final LoggedTunableNumber bangBangConstant =
       new LoggedTunableNumber("Flywheel/BangBangConstant", 2.0);
   private static final LoggedTunableNumber bangBangMinDistance =
-      new LoggedTunableNumber("Flywheel/BangBangMinDistance", 3.5);
+      new LoggedTunableNumber("Flywheel/BangBangMinDistance", 3.25);
   private static final LoggedTunableNumber pidSetpointOffset =
       new LoggedTunableNumber(
           "Flywheel/PIDSetpointOffset", 2.0); // Offset up when not running bang-bang
@@ -167,8 +167,8 @@ public class Flywheel extends FullSubsystem {
     LoggedTracer.record("Flywheel/AfterScheduler");
   }
 
-  /** Run closed loop at the specified velocity. */
-  private void runVelocity(double velocityRadsPerSec, boolean bangBang) {
+  /** Run at the specified velocity. */
+  private void runVelocity(double velocityRadsPerSec, boolean bangBang, boolean idle) {
     // Calculate power budget from supply limit
     double vBus = Robot.batteryLogger.getBatteryVoltage();
     if (Constants.getMode() == Mode.SIM) {
@@ -214,7 +214,7 @@ public class Flywheel extends FullSubsystem {
     // Apply outputs
     atGoal = EqualsUtil.epsilonEquals(setpointVel, velocityRadsPerSec, 2.0);
     goalVel = velocityRadsPerSec;
-    outputs.mode = bangBang ? FlywheelIOOutputMode.VOLTAGE : FlywheelIOOutputMode.VELOCITY;
+    outputs.mode = bangBang || idle ? FlywheelIOOutputMode.VOLTAGE : FlywheelIOOutputMode.VELOCITY;
     outputs.velocityRadsPerSec = setpointVel;
     outputs.voltage =
         Math.signum(setpointVel) * kS.get() + setpointVel * kV.get() + filteredAccel * kA.get();
@@ -222,7 +222,7 @@ public class Flywheel extends FullSubsystem {
       if (inputs.velocityRadsPerSec < setpointVel) {
         outputs.voltage *= bangBangConstant.get();
       }
-    } else {
+    } else if (!idle) {
       outputs.velocityRadsPerSec += pidSetpointOffset.get();
     }
 
@@ -322,12 +322,17 @@ public class Flywheel extends FullSubsystem {
                 LaunchCalculator.getInstance().getParameters().flywheelSpeed(),
                 LaunchCalculator.getInstance().getParameters().distanceNoLookahead()
                         > bangBangMinDistance.get()
-                    && !LaunchCalculator.getInstance().getParameters().passing()),
+                    && !LaunchCalculator.getInstance().getParameters().passing(),
+                false),
         this::stop);
   }
 
   public Command runFixedCommand(DoubleSupplier velocity, boolean bangBang) {
-    return runEnd(() -> runVelocity(velocity.getAsDouble(), bangBang), this::stop);
+    return runEnd(() -> runVelocity(velocity.getAsDouble(), bangBang, false), this::stop);
+  }
+
+  public Command runIdle(DoubleSupplier velocity) {
+    return runEnd(() -> runVelocity(velocity.getAsDouble(), false, true), this::stop);
   }
 
   public Command stopCommand() {

@@ -276,7 +276,7 @@ public class RobotContainer {
     flywheel.setDefaultCommand(
         new ContinuousConditionalCommand(
             flywheel.stopCommand(),
-            flywheel.runFixedCommand(LaunchCalculator.idleSpeed, false),
+            flywheel.runIdle(LaunchCalculator.idleSpeed),
             disableAutoSpinup));
   }
 
@@ -363,9 +363,12 @@ public class RobotContainer {
     // Align and auto-launch
     primary
         .leftBumper()
-        .whileTrue(DriveCommands.joystickDriveWhileLaunching(drive, driverX, driverY))
+        .debounce(0.15, DebounceType.kFalling)
         .whileTrueContinuous(flywheel.runTrackTargetCommand())
-        .whileTrueContinuous(hood.runTrackTargetCommand())
+        .whileTrueContinuous(hood.runTrackTargetCommand());
+    primary
+        .leftBumper()
+        .whileTrue(DriveCommands.joystickDriveWhileLaunching(drive, driverX, driverY))
         .onFalse(Commands.runOnce(() -> slamtake.setSlamGoal(SlamGoal.DEPLOY)))
         .and(() -> LaunchCalculator.getInstance().getParameters().isValid())
         .and(() -> ignoreHubState.getAsBoolean() || hubActiveOrPassing.getAsBoolean())
@@ -537,7 +540,7 @@ public class RobotContainer {
                     () -> slamtake.setIntakeGoal(IntakeGoal.INTAKE),
                     () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
                     slamtake)
-                .withTimeout(1.0));
+                .withTimeout(0.2));
 
     // Run intake
     primary
@@ -642,6 +645,31 @@ public class RobotContainer {
 
     // Test flywheel spin-up
     secondary.leftBumper().whileTrue(flywheel.runFixedCommand(() -> 200.0, false));
+
+    // Test hopper
+    secondary
+        .povLeft()
+        .whileTrue(
+            Commands.startEnd(
+                () -> hopper.setGoal(Hopper.Goal.LAUNCH),
+                () -> hopper.setGoal(Hopper.Goal.STOP),
+                hopper));
+
+    // Test kickers
+    secondary
+        .leftStick()
+        .whileTrue(
+            Commands.startEnd(
+                () -> kicker.setGoal(Kicker.Goal.TEST_FRONT),
+                () -> kicker.setGoal(Kicker.Goal.STOP),
+                kicker));
+    secondary
+        .rightStick()
+        .whileTrue(
+            Commands.startEnd(
+                () -> kicker.setGoal(Kicker.Goal.TEST_BACK),
+                () -> kicker.setGoal(Kicker.Goal.STOP),
+                kicker));
 
     // ****** OVERRIDE SWITCHES *****
 

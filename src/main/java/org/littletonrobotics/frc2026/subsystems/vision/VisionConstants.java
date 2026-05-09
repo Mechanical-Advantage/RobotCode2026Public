@@ -78,7 +78,7 @@ public class VisionConstants {
                                         -22.5 + cameraPitchFudgeDegrees[0].get()),
                                     Units.degreesToRadians(180.0))));
                       })
-                  .id("40552081")
+                  .id("40265450")
                   .width(1800)
                   .height(1200)
                   .exposure(monoExposure)

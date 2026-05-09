@@ -18,6 +18,8 @@ import org.littletonrobotics.frc2026.util.SuppliedWaitCommand;
 public class CompactingCommands {
   public static final LoggedTunableNumber slamLaunchDelay =
       new LoggedTunableNumber("CompactingCommands/SlamLaunchDelay", 0.2);
+  public static final LoggedTunableNumber slamIntakeTimeout =
+      new LoggedTunableNumber("CompactingCommands/SlamIntakeTimeout", 1.2);
 
   private CompactingCommands() {}
 
@@ -29,6 +31,7 @@ public class CompactingCommands {
                     () -> slamtake.setIntakeGoal(IntakeGoal.INTAKE),
                     () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
                     slamtake)
+                .raceWith(new SuppliedWaitCommand(slamIntakeTimeout))
                 .asProxy());
   }
 }

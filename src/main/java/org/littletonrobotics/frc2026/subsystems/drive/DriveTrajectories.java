@@ -578,16 +578,27 @@ public class DriveTrajectories {
                 PathRequestSegment.builder()
                     .waypoints(
                         // Prepare to enter trench
-                        PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.fromDegrees(-90)))
-                            .build())
+                        PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.kZero)).build())
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Through trench
-                        PathWaypoint.from(new Pose2d(Trench.leftClear, Rotation2d.fromDegrees(-90)))
+                        // Drive through and clear trench
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Trench.leftClear.plus(new Translation2d(-0.6, 0.0)),
+                                    Rotation2d.kZero))
                             .build())
-                    .keepInLaneWidth(0.05)
+                    .keepInLaneWidth(0.03)
                     .maxAngularVelocity(0.1)
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Rotate
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Trench.leftClear.plus(new Translation2d(0.5, -0.2)),
+                                    Rotation2d.fromDegrees(-90)))
+                            .build())
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
@@ -628,20 +639,31 @@ public class DriveTrajectories {
                 PathRequestSegment.builder()
                     .waypoints(
                         // Prepare to enter trench
-                        PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.fromDegrees(-90)))
+                        PathWaypoint.from(new Pose2d(Trench.leftEntry, Rotation2d.kZero)).build())
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Drive through and clear trench
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    Trench.leftClear.plus(new Translation2d(-0.6, 0.0)),
+                                    Rotation2d.kZero))
                             .build())
+                    .keepInLaneWidth(0.03)
+                    .maxAngularVelocity(0.1)
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
                         // Orient towards trench
                         PathWaypoint.from(
                                 new Pose2d(
-                                    FieldConstants.fieldLength / 2.0 - DriveConstants.fullApothemX,
+                                    FieldConstants.fieldLength / 2.0
+                                        - DriveConstants.fullApothemX
+                                        + 0.01,
                                     Trench.leftEntry.getY(),
                                     Rotation2d.fromDegrees(-90)))
                             .build())
                     .keepInLaneWidth(0.05)
-                    .maxAngularVelocity(0.1)
                     .build());
 
     paths.put(

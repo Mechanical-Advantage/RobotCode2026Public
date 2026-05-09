@@ -381,7 +381,8 @@ public class AutoCommands {
       Drive drive,
       Supplier<AutoQuestionResponse> coastTarget,
       BooleanSupplier isBump,
-      BooleanSupplier mirror) {
+      BooleanSupplier mirror,
+      boolean returnFromBump) {
     return Commands.either(
         rushToCenter(drive, bumpCrossTime, true)
             .andThen(
@@ -408,11 +409,29 @@ public class AutoCommands {
         Commands.select(
             Map.of(
                 AutoQuestionResponse.HUB,
-                followTrajectory("launchLeftTrenchToFarHubKachow", drive, false, mirror),
+                followTrajectory(
+                    returnFromBump
+                        ? "launchLeftBumpToFarHubKachow"
+                        : "launchLeftTrenchToFarHubKachow",
+                    drive,
+                    false,
+                    mirror),
                 AutoQuestionResponse.BUMP,
-                followTrajectory("launchLeftTrenchToFarBumpKachow", drive, false, mirror),
+                followTrajectory(
+                    returnFromBump
+                        ? "launchLeftBumpToFarBumpKachow"
+                        : "launchLeftTrenchToFarBumpKachow",
+                    drive,
+                    false,
+                    mirror),
                 AutoQuestionResponse.TRENCH,
-                followTrajectory("launchLeftTrenchToFarTrenchKachow", drive, false, mirror),
+                followTrajectory(
+                    returnFromBump
+                        ? "launchLeftBumpToFarTrenchKachow"
+                        : "launchLeftTrenchToFarTrenchKachow",
+                    drive,
+                    false,
+                    mirror),
                 AutoQuestionResponse.NONE,
                 Commands.idle()),
             coastTarget),
@@ -430,6 +449,7 @@ public class AutoCommands {
                             () -> slamtake.setIntakeGoal(IntakeGoal.INTAKE),
                             () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
                             slamtake)
+                        .raceWith(new SuppliedWaitCommand(CompactingCommands.slamIntakeTimeout))
                         .asProxy()))
         .deadlineFor(
             Commands.startEnd(
@@ -467,10 +487,20 @@ public class AutoCommands {
             new SuppliedWaitCommand(CompactingCommands.slamLaunchDelay)
                 .andThen(
                     Commands.run(
-                        () ->
-                            slamtake.setSlamGoal(
-                                indexHastily ? SlamGoal.RETRACT_FAST : SlamGoal.RETRACT_SLOW)),
-                    Commands.idle())
+                            () ->
+                                slamtake.setSlamGoal(
+                                    indexHastily ? SlamGoal.RETRACT_FAST : SlamGoal.RETRACT_SLOW))
+                        .alongWith(
+                            Commands.runEnd(
+                                    () -> slamtake.setIntakeGoal(IntakeGoal.INTAKE),
+                                    () -> slamtake.setIntakeGoal(IntakeGoal.STOP),
+                                    slamtake)
+                                .raceWith(
+                                    new SuppliedWaitCommand(
+                                        () ->
+                                            CompactingCommands.slamIntakeTimeout.get()
+                                                * (indexHastily ? 0.6 : 1.0)))
+                                .asProxy()))
                 .deadlineFor(
                     Commands.startEnd(
                         () -> {
