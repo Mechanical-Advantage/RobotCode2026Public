@@ -42,6 +42,9 @@ import org.littletonrobotics.frc2026.FieldConstants.AprilTagLayoutType;
 import org.littletonrobotics.frc2026.commands.CompactingCommands;
 import org.littletonrobotics.frc2026.commands.DriveCommands;
 import org.littletonrobotics.frc2026.commands.auto.AutoBuilder;
+import org.littletonrobotics.frc2026.salesman.SalesAssociate;
+import org.littletonrobotics.frc2026.salesman.SalesmanSolver;
+import org.littletonrobotics.frc2026.salesman.SalesmanSolverIO;
 import org.littletonrobotics.frc2026.subsystems.drive.Drive;
 import org.littletonrobotics.frc2026.subsystems.drive.DriveConstants;
 import org.littletonrobotics.frc2026.subsystems.drive.GyroIO;
@@ -90,6 +93,7 @@ public class RobotContainer {
   private Vision vision;
   private Leds leds;
   private HubCounter hubCounter = new HubCounter();
+  private SalesmanSolver salesmanSolver;
 
   // Controllers
   private final RazerWolverineController primary = new RazerWolverineController(0);
@@ -184,6 +188,7 @@ public class RobotContainer {
               new Kicker(
                   new RollerSystemIO() {}, new RollerSystemIO() {}, Optional.of(simFuelCount));
           leds = new Leds(new LedsIOHAL());
+          salesmanSolver = new SalesmanSolver(new SalesAssociate());
           break;
       }
     }
@@ -232,6 +237,9 @@ public class RobotContainer {
     }
     if (leds == null) {
       leds = new Leds(new LedsIO() {});
+    }
+    if (salesmanSolver == null) {
+      salesmanSolver = new SalesmanSolver(new SalesmanSolverIO() {});
     }
 
     // Set up Choreo directory
@@ -289,8 +297,173 @@ public class RobotContainer {
             kicker,
             hood,
             flywheel,
+            salesmanSolver,
             autoSelector::getResponses,
             offsetTime);
+
+    AutoQuestion firstSweep =
+        new AutoQuestion(
+            "1st Sweep?",
+            List.of(
+                AutoQuestionResponse.CONSERVATIVE,
+                AutoQuestionResponse.NEUTRAL,
+                AutoQuestionResponse.FLIGHTLESS,
+                AutoQuestionResponse.DAVIS,
+                AutoQuestionResponse.DAVIS_FRIENDSHIP,
+                AutoQuestionResponse.CORIOLIS,
+                AutoQuestionResponse.SALESMAN,
+                AutoQuestionResponse.SALESMAN_TURN));
+
+    AutoQuestion secondSweep =
+        new AutoQuestion(
+            "2nd Sweep?",
+            List.of(
+                AutoQuestionResponse.DAVIS,
+                AutoQuestionResponse.DAVIS_FRIENDSHIP,
+                AutoQuestionResponse.CORIOLIS,
+                AutoQuestionResponse.TILDE,
+                AutoQuestionResponse.SALESMAN_FROM_BEHIND,
+                AutoQuestionResponse.SALESMAN_FROM_BEHIND_FRIENDSHIP,
+                AutoQuestionResponse.SALESMAN));
+
+    AutoQuestion zoningLaws =
+        new AutoQuestion(
+            "Salesman Neutral Zone Limits?",
+            List.of(
+                AutoQuestionResponse.DYNAMIC_ETHICAL,
+                AutoQuestionResponse.FULL_CLOSE,
+                AutoQuestionResponse.LEFT_CLOSE,
+                AutoQuestionResponse.RIGHT_CLOSE));
+
+    AutoQuestion coastTarget =
+        new AutoQuestion(
+            "Coast Target?",
+            List.of(
+                AutoQuestionResponse.HUB,
+                AutoQuestionResponse.BUMP,
+                AutoQuestionResponse.TRENCH,
+                AutoQuestionResponse.NONE));
+
+    // AutoQuestion passingLaws =
+    //     new AutoQuestion(
+    //         "Passing Side?",
+    //         List.of(
+    //             AutoQuestionResponse.LEFT_CLOSE,
+    //             AutoQuestionResponse.RIGHT_CLOSE,
+    //             AutoQuestionResponse.BOTH));
+
+    // Semple Salesman
+    // autoSelector.addRoutine(
+    //     "Semple Salesman",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Start Position?",
+    //             List.of(
+    //                 AutoQuestionResponse.LEFT_TRENCH,
+    //                 AutoQuestionResponse.LEFT_TRENCH_OFFSET,
+    //                 AutoQuestionResponse.LEFT_BUMP,
+    //                 AutoQuestionResponse.RIGHT_TRENCH,
+    //                 AutoQuestionResponse.RIGHT_TRENCH_OFFSET,
+    //                 AutoQuestionResponse.RIGHT_BUMP)),
+    //         firstSweep,
+    //         secondSweep,
+    //         new AutoQuestion(
+    //             "Return & Scoring Behavior?",
+    //             List.of(
+    //                 AutoQuestionResponse.LEFT, AutoQuestionResponse.RIGHT
+    //                 // AutoQuestionResponse.LEFT_NO_TRENCH,
+    //                 // AutoQuestionResponse.RIGHT_NO_TRENCH
+    //                 )),
+    //         zoningLaws),
+    //     autoBuilder.sempleSalesman());
+
+    // Kachow Salesman
+    autoSelector.addRoutine(
+        "Kachow Salesman",
+        List.of(
+            new AutoQuestion(
+                "Start Position?",
+                List.of(
+                    AutoQuestionResponse.LEFT_TRENCH,
+                    AutoQuestionResponse.LEFT_TRENCH_OFFSET,
+                    AutoQuestionResponse.LEFT_BUMP,
+                    AutoQuestionResponse.RIGHT_TRENCH,
+                    AutoQuestionResponse.RIGHT_TRENCH_OFFSET,
+                    AutoQuestionResponse.RIGHT_BUMP)),
+            firstSweep,
+            secondSweep,
+            new AutoQuestion(
+                "Return & Scoring Behavior?",
+                List.of(
+                    AutoQuestionResponse.LEFT, AutoQuestionResponse.RIGHT
+                    // AutoQuestionResponse.LEFT_NO_TRENCH,
+                    // AutoQuestionResponse.RIGHT_NO_TRENCH
+                    )),
+            coastTarget,
+            zoningLaws),
+        autoBuilder.kachowSalesman());
+
+    // Benevolent Salesman
+    // autoSelector.addRoutine(
+    //     "Benevolent Salesman",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Start Position?",
+    //             List.of(
+    //                 AutoQuestionResponse.LEFT_TRENCH,
+    //                 AutoQuestionResponse.LEFT_TRENCH_OFFSET,
+    //                 AutoQuestionResponse.LEFT_BUMP,
+    //                 AutoQuestionResponse.RIGHT_TRENCH,
+    //                 AutoQuestionResponse.RIGHT_TRENCH_OFFSET,
+    //                 AutoQuestionResponse.RIGHT_BUMP)),
+    //         firstSweep,
+    //         zoningLaws,
+    //         passingLaws),
+    //     autoBuilder.benevolentSalesman());
+
+    // Mellonomics Salesman
+    // autoSelector.addRoutine(
+    //     "Mellonomics Salesman",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Start Position?",
+    //             List.of(
+    //                 AutoQuestionResponse.LEFT_TRENCH,
+    //                 AutoQuestionResponse.LEFT_TRENCH_OFFSET,
+    //                 AutoQuestionResponse.LEFT_BUMP,
+    //                 AutoQuestionResponse.RIGHT_TRENCH,
+    //                 AutoQuestionResponse.RIGHT_TRENCH_OFFSET,
+    //                 AutoQuestionResponse.RIGHT_BUMP)),
+    //         firstSweep,
+    //         secondSweep,
+    //         new AutoQuestion(
+    //             "Return & Scoring Behavior?",
+    //             List.of(
+    //                 AutoQuestionResponse.LEFT,
+    //                 AutoQuestionResponse.RIGHT,
+    //                 AutoQuestionResponse.LEFT_NO_TRENCH,
+    //                 AutoQuestionResponse.RIGHT_NO_TRENCH)),
+    //         zoningLaws,
+    //         passingLaws),
+    //     autoBuilder.mellonomicsSalesman());
+
+    // Substantial Salesman
+    autoSelector.addRoutine(
+        "Substantial Salesman",
+        List.of(
+            new AutoQuestion(
+                "Start Position?",
+                List.of(
+                    AutoQuestionResponse.LEFT_TRENCH,
+                    AutoQuestionResponse.LEFT_TRENCH_OFFSET,
+                    AutoQuestionResponse.LEFT_BUMP)),
+            firstSweep,
+            new AutoQuestion(
+                "Return to Neutral Zone?",
+                List.of(AutoQuestionResponse.LEFT_TRENCH, AutoQuestionResponse.LEFT_BUMP)),
+            coastTarget,
+            zoningLaws),
+        autoBuilder.substantialSalesman());
 
     // Monopoly Salesman
     autoSelector.addRoutine(
@@ -299,7 +472,10 @@ public class RobotContainer {
             new AutoQuestion(
                 "Start Position?",
                 List.of(AutoQuestionResponse.LEFT_TRENCH, AutoQuestionResponse.LEFT_BUMP)),
-            new AutoQuestion("Post-Launch?", List.of(AutoQuestionResponse.NOTHING))),
+            new AutoQuestion(
+                "Post-Launch?",
+                List.of(AutoQuestionResponse.NOTHING, AutoQuestionResponse.SALESMAN)),
+            zoningLaws),
         autoBuilder.monopolySalesman());
 
     // Timid Salesman

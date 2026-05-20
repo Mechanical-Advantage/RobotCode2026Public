@@ -14,6 +14,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import org.littletonrobotics.frc2026.Robot;
+import org.littletonrobotics.frc2026.energy.FinanceDepartment;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIO.ModuleIOOutputMode;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIO.ModuleIOOutputs;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
@@ -62,16 +63,20 @@ public class Module {
     encoderDisconnectedAlert.set(Robot.showHardwareAlerts() && !inputs.encoderConnected);
 
     // Report energy usage
-    Robot.batteryLogger.reportCurrentUsage(
-        driveEnergyKey, true, inputs.driveConnected ? inputs.driveSupplyCurrentAmps : 0.0);
-    Robot.batteryLogger.reportCurrentUsage(
-        turnEnergyKey, false, inputs.turnConnected ? inputs.turnSupplyCurrentAmps : 0.0);
+    FinanceDepartment.getInstance()
+        .reportCurrentUsage(
+            driveEnergyKey, true, inputs.driveConnected ? inputs.driveSupplyCurrentAmps : 0.0);
+    FinanceDepartment.getInstance()
+        .reportCurrentUsage(
+            turnEnergyKey, false, inputs.turnConnected ? inputs.turnSupplyCurrentAmps : 0.0);
 
     // Record cycle times
     LoggedTracer.record("Drive/Module" + index + "/Periodic");
   }
 
   public void periodicAfterScheduler() {
+    double driveLimit = FinanceDepartment.getInstance().getDriveLimit();
+    outputs.driveSupplyCurrentLimit = driveLimit;
 
     io.applyOutputs(outputs);
     LoggedTracer.record("Drive/Module" + index + "/AfterScheduler");

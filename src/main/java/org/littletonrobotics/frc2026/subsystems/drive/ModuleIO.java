@@ -8,6 +8,7 @@
 package org.littletonrobotics.frc2026.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import org.littletonrobotics.frc2026.energy.CurrentLimits;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
@@ -46,6 +47,8 @@ public interface ModuleIO {
     public double driveCharacterizationOutput = 0.0;
     public Rotation2d turnRotation = Rotation2d.kZero;
     public boolean turnNeutral = false;
+
+    public double driveSupplyCurrentLimit = CurrentLimits.driveMinLimitAmps;
   }
 
   public default void updateInputs(ModuleIOInputs inputs) {}

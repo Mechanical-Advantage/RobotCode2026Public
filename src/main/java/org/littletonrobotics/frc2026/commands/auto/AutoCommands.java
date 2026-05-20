@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2026.AutoFieldConstants;
+import org.littletonrobotics.frc2026.AutoFieldConstants.Bump;
 import org.littletonrobotics.frc2026.AutoFieldConstants.Launch;
 import org.littletonrobotics.frc2026.AutoSelector.AutoQuestionResponse;
 import org.littletonrobotics.frc2026.Constants;
@@ -34,6 +35,8 @@ import org.littletonrobotics.frc2026.RobotState;
 import org.littletonrobotics.frc2026.commands.CompactingCommands;
 import org.littletonrobotics.frc2026.commands.DriveToPose;
 import org.littletonrobotics.frc2026.commands.DriveTrajectory;
+import org.littletonrobotics.frc2026.salesman.SalesmanCommands;
+import org.littletonrobotics.frc2026.salesman.SalesmanSolver;
 import org.littletonrobotics.frc2026.subsystems.drive.Drive;
 import org.littletonrobotics.frc2026.subsystems.drive.DriveConstants;
 import org.littletonrobotics.frc2026.subsystems.hopper.Hopper;
@@ -43,6 +46,7 @@ import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.Flywheel;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.IntakeGoal;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.SlamGoal;
+import org.littletonrobotics.frc2026.util.Container;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2026.util.SuppliedWaitCommand;
 import org.littletonrobotics.frc2026.util.geometry.AllianceFlipUtil;
@@ -70,6 +74,507 @@ public class AutoCommands {
                         0.0,
                         RobotState.getInstance().getRotation())))
         .withTimeout(Constants.getMode().equals(Mode.SIM) ? 0.7 : time);
+  }
+
+  // Start position -> Branch into neutral zone behaviors
+  public static Command firstNeutralZoneSweep(
+      Drive drive,
+      SalesmanSolver salesmanSolver,
+      Supplier<AutoQuestionResponse> startPosition,
+      Supplier<AutoQuestionResponse> sweepMode,
+      Supplier<Bounds> boundsSupplier,
+      double intakeTime,
+      double intakeTimeTurn) {
+    BooleanSupplier isTrench =
+        () ->
+            startPosition.get().equals(AutoQuestionResponse.LEFT_TRENCH)
+                || startPosition.get().equals(AutoQuestionResponse.RIGHT_TRENCH)
+                || startPosition.get().equals(AutoQuestionResponse.LEFT_TRENCH_OFFSET)
+                || startPosition.get().equals(AutoQuestionResponse.RIGHT_TRENCH_OFFSET);
+
+    BooleanSupplier isOffset =
+        () ->
+            startPosition.get().equals(AutoQuestionResponse.LEFT_TRENCH_OFFSET)
+                || startPosition.get().equals(AutoQuestionResponse.RIGHT_TRENCH_OFFSET);
+
+    return Commands.sequence(
+        // Enter neutral zone
+        Commands.either(
+            // Clear trench first if going directly into salesman
+            Commands.either(
+                    followTrajectory(
+                        "trenchLeftStartOffsetToNeutralZone",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    followTrajectory(
+                        "trenchLeftStart",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    isOffset)
+                .onlyIf(
+                    () ->
+                        sweepMode.get().equals(AutoQuestionResponse.SALESMAN)
+                            || sweepMode.get().equals(AutoQuestionResponse.SALESMAN_TURN)),
+            // Rush full speed over bump
+            rushToCenter(drive, bumpCrossTime, false),
+            isTrench),
+
+        // Branch into neutral zone modes
+        Commands.select(
+            Map.of(
+                // Straight into salesman intaking
+                AutoQuestionResponse.SALESMAN,
+                SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                    .withTimeout(intakeTime),
+
+                // Salesman Turn -> Salesman intaking
+                AutoQuestionResponse.SALESMAN_TURN,
+                Commands.sequence(
+                    // Turn into corner of fuel pool
+                    salesmanTurn(drive, startPosition).unless(isTrench),
+                    SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                        .raceWith(
+                            new SuppliedWaitCommand(
+                                () -> isTrench.getAsBoolean() ? intakeTime : intakeTimeTurn))),
+
+                // Predetermined conservative neutral zone sweep
+                AutoQuestionResponse.CONSERVATIVE,
+                Commands.either(
+                    Commands.either(
+                        followTrajectory(
+                            "leftTrenchStartOffsetConservativeSweep",
+                            drive,
+                            false,
+                            () -> !isLeftSide(startPosition).getAsBoolean()),
+                        followTrajectory(
+                            "leftTrenchStartConservativeSweep",
+                            drive,
+                            false,
+                            () -> !isLeftSide(startPosition).getAsBoolean()),
+                        isOffset),
+                    followTrajectory(
+                        "leftBumpConservativeSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    isTrench),
+
+                // Predetermined neutral neutral zone sweep
+                AutoQuestionResponse.NEUTRAL,
+                Commands.either(
+                    Commands.either(
+                        followTrajectory(
+                            "leftTrenchStartOffsetNeutralSweep",
+                            drive,
+                            false,
+                            () -> !isLeftSide(startPosition).getAsBoolean()),
+                        followTrajectory(
+                            "leftTrenchStartNeutralSweep",
+                            drive,
+                            false,
+                            () -> !isLeftSide(startPosition).getAsBoolean()),
+                        isOffset),
+                    followTrajectory(
+                        "leftBumpNeutralSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    isTrench),
+
+                // Predetermined flightless neutral zone sweep
+                AutoQuestionResponse.FLIGHTLESS,
+                Commands.either(
+                    followTrajectory(
+                        "leftTrenchStartOffsetFlightlessSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    followTrajectory(
+                        "leftBumpFlightlessSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    isTrench),
+
+                // Variations of later neutral zone sweeps if offset
+                AutoQuestionResponse.DAVIS,
+                Commands.either(
+                    followTrajectory(
+                        "leftTrenchStartOffsetDavisSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    followTrajectory(
+                        "bumpLeftOuterDavisSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    isTrench),
+                AutoQuestionResponse.DAVIS_FRIENDSHIP,
+                Commands.either(
+                    followTrajectory(
+                        "leftTrenchStartOffsetDavisSweepFriendship",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    followTrajectory(
+                        "bumpLeftOuterDavisSweepFriendship",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    isTrench),
+                AutoQuestionResponse.CORIOLIS,
+                Commands.either(
+                    followTrajectory(
+                        "leftTrenchStartOffsetCoriolisSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(startPosition).getAsBoolean()),
+                    Commands.none(),
+                    isTrench)),
+            sweepMode));
+  }
+
+  // LOTM through alliance zone into neutral zone path. Assumes robot is starting from the bump
+  // launch pose
+  public static Command lotmThroughNeutralZoneSweep(
+      Drive drive,
+      SalesmanSolver salesmanSolver,
+      Supplier<AutoQuestionResponse> sweepMode,
+      Supplier<AutoQuestionResponse> returnResponse,
+      Supplier<Bounds> boundsSupplier,
+      BooleanSupplier shouldAim,
+      double intakeTime,
+      double intakeTimeTurn) {
+    BooleanSupplier isBump =
+        () ->
+            returnResponse.get().equals(AutoQuestionResponse.LEFT_NO_TRENCH)
+                || returnResponse.get().equals(AutoQuestionResponse.RIGHT_NO_TRENCH);
+    BooleanSupplier isTrench = () -> !isBump.getAsBoolean();
+
+    return Commands.sequence(
+        // No LOTM if returning to Neutral Zone over the bump
+        Commands.waitSeconds(AutoBuilder.launchTime)
+            .andThen(rushToCenter(drive, bumpCrossTime, true))
+            .onlyIf(isBump),
+        Commands.select(
+            Map.of(
+                // Straight into salesman intaking
+                AutoQuestionResponse.SALESMAN,
+                followTrajectoryWhileAiming(
+                        "launchLeftBumpThroughTrench",
+                        drive,
+                        false,
+                        shouldAim,
+                        () -> !isLeftSide(returnResponse).getAsBoolean())
+                    .onlyIf(isTrench)
+                    .andThen(
+                        SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                            .withTimeout(intakeTime)),
+
+                // Salesman Turn -> Salesman intaking
+                AutoQuestionResponse.SALESMAN_FROM_BEHIND,
+                Commands.either(
+                        followTrajectoryWhileAiming(
+                            "launchLeftBumpToBehindHub",
+                            drive,
+                            false,
+                            shouldAim,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        followTrajectory(
+                            "bumpLeftOuterToBehindHub",
+                            drive,
+                            false,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        isTrench)
+                    .andThen(
+                        SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                            .withTimeout(intakeTimeTurn)),
+
+                // Salesman Turn -> Salesman intaking conservative
+                AutoQuestionResponse.SALESMAN_FROM_BEHIND_FRIENDSHIP,
+                Commands.either(
+                        followTrajectoryWhileAiming(
+                            "launchLeftBumpToBehindHubFriendship",
+                            drive,
+                            false,
+                            shouldAim,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        followTrajectory(
+                            "bumpLeftOuterToBehindHubFriendship",
+                            drive,
+                            false,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        isTrench)
+                    .andThen(
+                        SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                            .withTimeout(intakeTimeTurn)),
+
+                // Predetermined neutral zone sweep
+                AutoQuestionResponse.DAVIS,
+                Commands.either(
+                    followTrajectoryWhileAiming(
+                        "launchLeftBumpDavisSweep",
+                        drive,
+                        false,
+                        shouldAim,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    followTrajectory(
+                        "bumpLeftOuterDavisSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    isTrench),
+
+                // Predetermined conservative neutral zone sweep
+                AutoQuestionResponse.DAVIS_FRIENDSHIP,
+                Commands.either(
+                    followTrajectoryWhileAiming(
+                        "launchLeftBumpDavisSweepFriendship",
+                        drive,
+                        false,
+                        shouldAim,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    followTrajectory(
+                        "bumpLeftOuterDavisSweepFriendship",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    isTrench),
+
+                // Predetermined inverse conservative neutral zone sweep
+                AutoQuestionResponse.CORIOLIS,
+                Commands.either(
+                    followTrajectoryWhileAiming(
+                        "launchLeftBumpCoriolisSweep",
+                        drive,
+                        false,
+                        shouldAim,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    Commands.none(),
+                    isTrench)),
+            sweepMode));
+  }
+
+  // Launch from fixed position into neutral zone path. Assumes robot is starting from the bump
+  // launch pose
+  public static Command launchThroughNeutralZoneSweep(
+      Drive drive,
+      SalesmanSolver salesmanSolver,
+      Supplier<AutoQuestionResponse> sweepMode,
+      Supplier<AutoQuestionResponse> returnResponse,
+      Supplier<Bounds> boundsSupplier,
+      double intakeTime,
+      double intakeTimeTurn) {
+    BooleanSupplier isBump =
+        () ->
+            returnResponse.get().equals(AutoQuestionResponse.LEFT_NO_TRENCH)
+                || returnResponse.get().equals(AutoQuestionResponse.RIGHT_NO_TRENCH);
+    BooleanSupplier isTrench = () -> !isBump.getAsBoolean();
+
+    return Commands.sequence(
+        Commands.waitSeconds(AutoBuilder.launchTime)
+            .andThen(rushToCenter(drive, bumpCrossTime, true))
+            .onlyIf(isBump),
+        Commands.select(
+            Map.of(
+                // Straight into salesman intaking
+                AutoQuestionResponse.SALESMAN,
+                followTrajectory(
+                        "launchLeftBumpThroughTrenchKachow",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse).getAsBoolean())
+                    .onlyIf(isTrench)
+                    .andThen(
+                        SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                            .withTimeout(intakeTime)),
+
+                // Salesman Turn -> Salesman intaking
+                AutoQuestionResponse.SALESMAN_FROM_BEHIND,
+                Commands.either(
+                        followTrajectory(
+                            "launchLeftBumpToBehindHubKachow",
+                            drive,
+                            false,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        followTrajectory(
+                            "bumpLeftOuterToBehindHub",
+                            drive,
+                            false,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        isTrench)
+                    .andThen(
+                        SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                            .withTimeout(intakeTimeTurn)),
+
+                // Salesman Turn -> Salesman intaking conservative
+                AutoQuestionResponse.SALESMAN_FROM_BEHIND_FRIENDSHIP,
+                Commands.either(
+                        followTrajectory(
+                            "launchLeftBumpToBehindHubFriendshipKachow",
+                            drive,
+                            false,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        followTrajectory(
+                            "bumpLeftOuterToBehindHubFriendship",
+                            drive,
+                            false,
+                            () -> !isLeftSide(returnResponse).getAsBoolean()),
+                        isTrench)
+                    .andThen(
+                        SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                            .withTimeout(intakeTimeTurn)),
+
+                // Predetermined neutral zone sweep
+                AutoQuestionResponse.DAVIS,
+                Commands.either(
+                    followTrajectory(
+                        "launchLeftBumpDavisSweepKachow",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    followTrajectory(
+                        "bumpLeftOuterDavisSweep",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    isTrench),
+
+                // Predetermined conservative neutral zone sweep
+                AutoQuestionResponse.DAVIS_FRIENDSHIP,
+                Commands.either(
+                    followTrajectory(
+                        "launchLeftBumpDavisSweepFriendshipKachow",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    followTrajectory(
+                        "bumpLeftOuterDavisSweepFriendship",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    isTrench),
+
+                // Predetermined inverse conservative neutral zone sweep
+                AutoQuestionResponse.CORIOLIS,
+                Commands.either(
+                    followTrajectory(
+                        "launchLeftBumpCoriolisSweepKachow",
+                        drive,
+                        false,
+                        () -> !isLeftSide(returnResponse.get()).getAsBoolean()),
+                    Commands.none(),
+                    isTrench)),
+            sweepMode));
+  }
+
+  // MARK: Salesmen
+  // Closest path to neutral zone -> Intake with Salesman -> Launch from closest launch pose
+  public static Command salesmanCycle(
+      Drive drive,
+      SalesmanSolver salesmanSolver,
+      Hopper hopper,
+      Kicker kicker,
+      Flywheel flywheel,
+      Slamtake slamtake,
+      Supplier<AutoQuestionResponse> returnResponse,
+      Supplier<Bounds> boundsSupplier,
+      boolean isFirstCycle,
+      boolean startInNeutralZone) {
+    Container<Boolean> firstCycle = new Container<>();
+    Container<Boolean> skipNeutralZone = new Container<>(startInNeutralZone);
+    BooleanSupplier left =
+        () ->
+            RobotState.getInstance().getEstimatedPose().getTranslation().getDistance(Bump.leftInner)
+                < RobotState.getInstance()
+                    .getEstimatedPose()
+                    .getTranslation()
+                    .getDistance(Bump.rightInner);
+    return Commands.repeatingSequence(
+            // Rush to neutral zone
+            Commands.sequence(
+                    driveToPose(
+                            drive,
+                            () ->
+                                new Pose2d(
+                                    left.getAsBoolean() ? Bump.leftInner : Bump.rightInner,
+                                    Rotation2d.kZero))
+                        .until(
+                            () ->
+                                yCrossed(
+                                        left.getAsBoolean()
+                                            ? FieldConstants.LinesHorizontal.leftBumpEnd
+                                                + DriveConstants.fullApothemX
+                                            : FieldConstants.LinesHorizontal.rightBumpEnd
+                                                + DriveConstants.fullApothemX,
+                                        true)
+                                    && yCrossed(
+                                        left.getAsBoolean()
+                                            ? FieldConstants.LinesHorizontal.leftBumpStart
+                                                - DriveConstants.fullApothemX
+                                            : FieldConstants.LinesHorizontal.rightBumpStart
+                                                - DriveConstants.fullApothemX,
+                                        false))
+                        .andThen(
+                            new DriveToPose(
+                                    drive,
+                                    () ->
+                                        new Pose2d(
+                                            RobotState.getInstance()
+                                                    .getEstimatedPose()
+                                                    .getTranslation()
+                                                    .getX()
+                                                + 1.0,
+                                            left.getAsBoolean()
+                                                ? Bump.leftInner.getY()
+                                                : Bump.rightInner.getY(),
+                                            Rotation2d.kZero))
+                                .until(
+                                    () ->
+                                        xCrossed(
+                                            FieldConstants.LinesVertical.neutralZoneNear
+                                                + DriveConstants.fullApothemX,
+                                            true))))
+                .onlyIf(
+                    () ->
+                        AllianceFlipUtil.applyX(RobotState.getInstance().getEstimatedPose().getX())
+                            < FieldConstants.LinesVertical.hubCenter)
+                .unless(() -> skipNeutralZone.value),
+            Commands.runOnce(() -> skipNeutralZone.value = false),
+
+            // Employ salesman
+            SalesmanCommands.autoIntake(drive, salesmanSolver, boundsSupplier)
+                .raceWith(
+                    new SuppliedWaitCommand(
+                        () ->
+                            firstCycle.value
+                                ? AutoBuilder.neutralZoneIntakeTimeFirst
+                                : AutoBuilder.neutralZoneIntakeTimeOther)),
+            Commands.runOnce(
+                () -> {
+                  firstCycle.value = false;
+                }),
+            Commands.either(
+                    returnToClosestLaunchPose(drive),
+                    returnToDeterminedLaunchPose(drive, returnResponse),
+                    () -> returnResponse.get() == AutoQuestionResponse.CLOSEST)
+                .raceWith(
+                    Commands.sequence(
+                        Commands.waitUntil(
+                            () ->
+                                AutoCommands.withinTolerance(
+                                        Launch.leftBump, 0.25, Rotation2d.k180deg)
+                                    || AutoCommands.withinTolerance(
+                                        Launch.rightBump, 0.25, Rotation2d.k180deg)),
+                        index(hopper, kicker, flywheel, slamtake)
+                            .withTimeout(AutoBuilder.launchTime))))
+        .beforeStarting(
+            () -> {
+              firstCycle.value = isFirstCycle;
+            });
   }
 
   // Drives to corner of fuel pool to set up neutral zone intaking

@@ -17,7 +17,6 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobotBase;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
@@ -33,13 +32,12 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2026.Constants.Mode;
 import org.littletonrobotics.frc2026.Constants.RobotType;
-import org.littletonrobotics.frc2026.energy.BatteryLogger;
+import org.littletonrobotics.frc2026.energy.FinanceDepartment;
 import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.HubShiftUtil;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.VirtualSubsystem;
-import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.AutoLogOutputManager;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -53,9 +51,6 @@ public class Robot extends LoggedRobot {
   private double autoStart;
   private boolean autoMessagePrinted;
   private RobotContainer robotContainer;
-
-  public static final BatteryLogger batteryLogger = new BatteryLogger();
-  private final BatteryIOInputsAutoLogged batteryInputs = new BatteryIOInputsAutoLogged();
 
   private final Timer fuelLoggingTimer = new Timer();
   private static final Timer disabledTimer = new Timer();
@@ -185,6 +180,9 @@ public class Robot extends LoggedRobot {
     // Set up auto logging for RobotState
     AutoLogOutputManager.addObject(RobotState.getInstance());
 
+    // Start tracking of battery in management
+    FinanceDepartment.getInstance().reset();
+
     // Instantiate RobotContainer
     robotContainer = new RobotContainer();
   }
@@ -196,24 +194,18 @@ public class Robot extends LoggedRobot {
     // Reset logged tracer
     LoggedTracer.reset();
 
-    // Update battery inputs
-    batteryInputs.batteryVoltage = RobotController.getBatteryVoltage();
-    batteryInputs.rioCurrent = RobotController.getInputCurrent();
-    batteryInputs.macMiniCurrent = 0.0;
-    Logger.processInputs("BatteryLogger", batteryInputs);
-    batteryLogger.setBatteryVoltage(batteryInputs.batteryVoltage);
-    batteryLogger.setRioCurrent(batteryInputs.rioCurrent);
-    batteryLogger.setMacMiniCurrent(batteryInputs.macMiniCurrent);
-    LoggedTracer.record("BatteryLogger/Periodic");
-
     // Main periodic functions
     VirtualSubsystem.runAllPeriodic();
     CommandScheduler.getInstance().run();
     LoggedTracer.record("Robot/Commands");
     VirtualSubsystem.runAllPeriodicAfterScheduler();
     FullSubsystem.runAllPeriodicAfterScheduler();
-    batteryLogger.periodicAfterScheduler();
     LoggedTracer.record("Robot/AfterScheduler");
+
+    // Reset tracking of battery
+    if (DriverStation.isDisabled() && disabledTimer.hasElapsed(10.0)) {
+      FinanceDepartment.getInstance().reset();
+    }
 
     // Reset disabled timer
     if (DriverStation.isEnabled()) {
@@ -222,24 +214,6 @@ public class Robot extends LoggedRobot {
 
     // Process throttle state
     Logger.recordOutput("Throttled", shouldThrottle());
-
-    // Clear old fuel
-    ObjectDetection.getInstance().clearOldFuelPoses();
-    LoggedTracer.record("ObjectDetection/ClearOldFuelPoses");
-
-    // Print auto duration
-    if (autonomousCommand != null) {
-      if (!autonomousCommand.isScheduled() && !autoMessagePrinted) {
-        if (DriverStation.isAutonomousEnabled()) {
-          System.out.printf(
-              "*** Auto finished in %.2f secs ***%n", Timer.getTimestamp() - autoStart);
-        } else {
-          System.out.printf(
-              "*** Auto cancelled in %.2f secs ***%n", Timer.getTimestamp() - autoStart);
-        }
-        autoMessagePrinted = true;
-      }
-    }
 
     // Update RobotContainer dashboard outputs
     robotContainer.updateDashboardOutputs();
@@ -360,11 +334,4 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
-
-  @AutoLog
-  public static class BatteryIOInputs {
-    public double batteryVoltage = 12.0;
-    public double rioCurrent = 0.0;
-    public double macMiniCurrent = 0.0;
-  }
 }

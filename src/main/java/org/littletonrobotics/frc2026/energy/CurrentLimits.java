@@ -8,7 +8,10 @@
 package org.littletonrobotics.frc2026.energy;
 
 public class CurrentLimits {
-  public static final double driveLimitAmps = 30;
+  public static final double driveMinLimitAmps = 5;
+  public static final double driveMaxLimitAmps = 35;
+  public static final double driveAutoLimitAmps = 50;
+  public static final double driveProbeRateBrownout = 50.0; // Amps/second
   public static final double turnLimitAmps = 15;
   public static final double hopperLimitAmps = 40;
   public static final double kickerLimitAmps = 30;

@@ -27,6 +27,7 @@ import lombok.experimental.Accessors;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Constants.Mode;
 import org.littletonrobotics.frc2026.Robot;
+import org.littletonrobotics.frc2026.energy.FinanceDepartment;
 import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
 import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIO.FlywheelIOOutputMode;
 import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIO.FlywheelIOOutputs;
@@ -146,13 +147,14 @@ public class Flywheel extends FullSubsystem {
             && !motorFollower3ConnectedDebouncer.calculate(inputs.follower3Connected));
 
     // Report energy usage
-    Robot.batteryLogger.reportCurrentUsage(
-        "Flywheel",
-        false,
-        inputs.connected ? inputs.supplyCurrentAmps : 0.0,
-        inputs.follower1Connected ? inputs.follower1SupplyCurrentAmps : 0.0,
-        inputs.follower2Connected ? inputs.follower2SupplyCurrentAmps : 0.0,
-        inputs.follower3Connected ? inputs.follower3SupplyCurrentAmps : 0.0);
+    FinanceDepartment.getInstance()
+        .reportCurrentUsage(
+            "Flywheel",
+            false,
+            inputs.connected ? inputs.supplyCurrentAmps : 0.0,
+            inputs.follower1Connected ? inputs.follower1SupplyCurrentAmps : 0.0,
+            inputs.follower2Connected ? inputs.follower2SupplyCurrentAmps : 0.0,
+            inputs.follower3Connected ? inputs.follower3SupplyCurrentAmps : 0.0);
 
     SmartDashboard.putString("Flywheel Speed", String.format("%.0f", inputs.velocityRadsPerSec));
     SmartDashboard.putBoolean("Flywheel At Goal", atGoal);
@@ -170,7 +172,7 @@ public class Flywheel extends FullSubsystem {
   /** Run at the specified velocity. */
   private void runVelocity(double velocityRadsPerSec, boolean bangBang, boolean idle) {
     // Calculate power budget from supply limit
-    double vBus = Robot.batteryLogger.getBatteryVoltage();
+    double vBus = FinanceDepartment.getInstance().getBatteryVoltage();
     if (Constants.getMode() == Mode.SIM) {
       vBus = 10.0;
     }

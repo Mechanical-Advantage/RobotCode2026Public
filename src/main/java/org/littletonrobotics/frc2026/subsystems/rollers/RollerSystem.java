@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import java.util.function.BooleanSupplier;
 import lombok.Setter;
 import org.littletonrobotics.frc2026.Robot;
+import org.littletonrobotics.frc2026.energy.FinanceDepartment;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO.RollerSystemIOMode;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO.RollerSystemIOOutputs;
 import org.littletonrobotics.junction.Logger;
@@ -70,14 +71,15 @@ public class RollerSystem {
 
     // Record energy usage
     if (inputs.hasFollower) {
-      Robot.batteryLogger.reportCurrentUsage(
-          name,
-          false,
-          inputs.connected ? inputs.supplyCurrentAmps : 0.0,
-          inputs.followerConnected ? inputs.followerSupplyCurrentAmps : 0.0);
+      FinanceDepartment.getInstance()
+          .reportCurrentUsage(
+              name,
+              false,
+              inputs.connected ? inputs.supplyCurrentAmps : 0.0,
+              inputs.followerConnected ? inputs.followerSupplyCurrentAmps : 0.0);
     } else {
-      Robot.batteryLogger.reportCurrentUsage(
-          name, false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
+      FinanceDepartment.getInstance()
+          .reportCurrentUsage(name, false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
     }
 
     // Update mode

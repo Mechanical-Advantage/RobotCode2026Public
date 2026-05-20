@@ -21,7 +21,7 @@ public class BatteryLogger {
   private double totalPower = 0.0;
   private double totalEnergy = 0.0;
 
-  @Getter @Setter private double batteryVoltage = 12.6;
+  @Setter private double batteryVoltage = 12.6;
   @Setter private double rioCurrent = 0.0;
   @Setter private double macMiniCurrent = 0.0;
 
@@ -65,6 +65,10 @@ public class BatteryLogger {
   }
 
   public void periodicAfterScheduler() {
+    reportCurrentUsage(
+        "Controls/MacMini",
+        false,
+        macMiniCurrent / (batteryVoltage > 0.0 ? batteryVoltage : 12.0) / 0.9);
     reportCurrentUsage("Controls/roboRIO", false, rioCurrent);
     reportCurrentUsage("Controls/CANcoders", false, 0.05 * 4);
     reportCurrentUsage("Controls/Pigeon", false, 0.04);
@@ -90,8 +94,6 @@ public class BatteryLogger {
           joulesToWattHours(entry.getValue()),
           "watt hours");
     }
-
-    resetTotals();
   }
 
   public void resetTotals() {

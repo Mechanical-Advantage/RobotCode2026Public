@@ -24,6 +24,7 @@ import org.littletonrobotics.frc2026.DarwinMechanism3d;
 import org.littletonrobotics.frc2026.Robot;
 import org.littletonrobotics.frc2026.RobotState;
 import org.littletonrobotics.frc2026.TrenchBounds;
+import org.littletonrobotics.frc2026.energy.FinanceDepartment;
 import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
 import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIO.HoodIOOutputMode;
 import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIO.HoodIOOutputs;
@@ -85,8 +86,8 @@ public class Hood extends FullSubsystem {
     motorDisconnectedAlert.set(
         Robot.showHardwareAlerts() && !motorConnectedDebouncer.calculate(inputs.motorConnected));
 
-    Robot.batteryLogger.reportCurrentUsage(
-        "Hood", false, inputs.motorConnected ? inputs.supplyCurrentAmps : 0.0);
+    FinanceDepartment.getInstance()
+        .reportCurrentUsage("Hood", false, inputs.motorConnected ? inputs.supplyCurrentAmps : 0.0);
 
     // Stop when disabled
     if (DriverStation.isDisabled() || (!zeroed && outputs.mode != HoodIOOutputMode.OPEN_LOOP)) {

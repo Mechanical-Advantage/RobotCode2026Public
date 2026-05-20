@@ -18,6 +18,7 @@ import java.util.function.BooleanSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import org.littletonrobotics.frc2026.Robot;
+import org.littletonrobotics.frc2026.energy.FinanceDepartment;
 import org.littletonrobotics.frc2026.subsystems.slamtake.SlamIO.SlamIOOutputMode;
 import org.littletonrobotics.frc2026.subsystems.slamtake.SlamIO.SlamIOOutputs;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
@@ -66,8 +67,8 @@ public class Slam {
     motorDisconnectedAlert.set(
         Robot.showHardwareAlerts() && !motorConnectedDebouncer.calculate(inputs.connected));
 
-    Robot.batteryLogger.reportCurrentUsage(
-        "Slam", false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
+    FinanceDepartment.getInstance()
+        .reportCurrentUsage("Slam", false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
 
     if (kP.hasChanged(hashCode()) || kD.hasChanged(hashCode())) {
       outputs.kP = kP.get();
