@@ -116,6 +116,33 @@ public class DriveTrajectories {
      *
      * MARK: > Conservative
      */
+    PathRequestBuilder tushPush =
+        PathRequest.builder()
+            .segments(
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Intake into the hub
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftBump.farRightCorner.plus(
+                                        new Translation2d(
+                                            DriveConstants.fullBaseRadius + 0.40, -0.44)),
+                                    Rotation2d.kPi))
+                            .build())
+                    .keepInLaneWidth(0.15)
+                    .build(),
+                PathRequestSegment.builder()
+                    .waypoints(
+                        // Back up to drive over bump
+                        PathWaypoint.from(
+                                new Pose2d(
+                                    FieldConstants.LeftBump.farRightCorner.plus(
+                                        new Translation2d(
+                                            DriveConstants.fullBaseRadius + 0.5, 0.65)),
+                                    Rotation2d.kPi))
+                            .build())
+                    .build());
+
     PathRequestBuilder conservativeSweep =
         PathRequest.builder()
             .segments(
@@ -130,6 +157,7 @@ public class DriveTrajectories {
                                             DriveConstants.fullApothemX)),
                                     Rotation2d.fromDegrees(-90.0)))
                             .build())
+                    .keepInLaneWidth(0.35)
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
@@ -159,20 +187,6 @@ public class DriveTrajectories {
                                         Rotation2d.fromDegrees(-90))
                                     .plus(new Transform2d(0.3, 0.0, Rotation2d.fromDegrees(-20))))
                             .build())
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Turn fully around
-                        PathWaypoint.from(
-                                new Pose2d(
-                                        FieldConstants.fieldLength / 2.0
-                                            - DriveConstants.fullWidthX,
-                                        FieldConstants.FuelPool.leftCenter.getY()
-                                            - FieldConstants.FuelPool.width / 4.0
-                                            - 0.2,
-                                        Rotation2d.fromDegrees(-90))
-                                    .plus(new Transform2d(0.3, 0.0, Rotation2d.fromDegrees(-90))))
-                            .build())
                     .build());
 
     paths.put(
@@ -180,6 +194,7 @@ public class DriveTrajectories {
         PathRequest.builder()
             .segments(trenchLeftStart.build().segments)
             .segments(conservativeSweep.build().segments)
+            .segments(tushPush.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -188,6 +203,7 @@ public class DriveTrajectories {
         PathRequest.builder()
             .segments(trenchLeftStartOffsetToNeutralZone.build().segments)
             .segments(conservativeSweep.build().segments)
+            .segments(tushPush.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -196,6 +212,7 @@ public class DriveTrajectories {
         PathRequest.builder()
             .segments(bumpReturn)
             .segments(conservativeSweep.build().segments)
+            .segments(tushPush.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -238,18 +255,6 @@ public class DriveTrajectories {
                     .keepInLaneWidth(0.03)
                     .maxAngularVelocity(0.8)
                     .maxVelocity(intakeVelocityLimit)
-                    .build(),
-                PathRequestSegment.builder()
-                    .waypoints(
-                        // Turn around fully
-                        PathWaypoint.from(
-                                new Pose2d(
-                                    FieldConstants.fieldCenter.plus(
-                                        new Translation2d(
-                                            -0.7, FieldConstants.FuelPool.width / 4.0 - 0.27)),
-                                    Rotation2d.kPi))
-                            .build())
-                    .maxVelocity(intakeVelocityLimit)
                     .build());
 
     paths.put(
@@ -257,6 +262,7 @@ public class DriveTrajectories {
         PathRequest.builder()
             .segments(trenchLeftStart.build().segments)
             .segments(neutralSweep.build().segments)
+            .segments(tushPush.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -265,6 +271,7 @@ public class DriveTrajectories {
         PathRequest.builder()
             .segments(trenchLeftStartOffsetToNeutralZone.build().segments)
             .segments(neutralSweep.build().segments)
+            .segments(tushPush.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -285,6 +292,7 @@ public class DriveTrajectories {
                             .build())
                     .build())
             .segments(neutralSweep.build().segments)
+            .segments(tushPush.build().segments)
             .stopAtEnd(false)
             .build());
 
@@ -821,26 +829,24 @@ public class DriveTrajectories {
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Drive behind hub
+                        // Intake into the hub
                         PathWaypoint.from(
                                 new Pose2d(
-                                    FieldConstants.LinesVertical.neutralZoneNear
-                                        + DriveConstants.fullApothemX
-                                        + 0.95,
-                                    FieldConstants.fieldWidth / 2.0 + 0.4,
+                                    FieldConstants.LeftBump.farRightCorner.plus(
+                                        new Translation2d(
+                                            DriveConstants.fullBaseRadius + 0.40, -0.44)),
                                     Rotation2d.kPi))
                             .build())
                     .maxAngularVelocity(0.1)
                     .build(),
                 PathRequestSegment.builder()
                     .waypoints(
-                        // Drive in front of bump
+                        // Back up to drive over bump
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.LeftBump.farRightCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullApothemX + 0.4,
-                                            DriveConstants.fullApothemX)),
+                                            DriveConstants.fullBaseRadius + 0.5, 0.65)),
                                     Rotation2d.kPi))
                             .build())
                     .build());
@@ -879,8 +885,8 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.LeftBump.farLeftCorner.plus(
-                                        new Translation2d(DriveConstants.fullApothemX + 0.35, 0)),
-                                    Rotation2d.fromDegrees(-90)))
+                                        new Translation2d(DriveConstants.fullApothemX + 0.4, 0)),
+                                    Rotation2d.fromDegrees(-105)))
                             .build())
                     .build(),
                 PathRequestSegment.builder()
@@ -890,11 +896,11 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farRightCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullApothemX + 0.35,
+                                            DriveConstants.fullApothemX + 0.4,
                                             -DriveConstants.fullApothemX + 0.2)),
-                                    Rotation2d.fromDegrees(-90)))
+                                    Rotation2d.fromDegrees(-105)))
                             .build())
-                    .keepInLaneWidth(0.08)
+                    .keepInLaneWidth(0.05)
                     .maxAngularVelocity(0.1)
                     .build());
 
@@ -907,8 +913,8 @@ public class DriveTrajectories {
                         PathWaypoint.from(
                                 new Pose2d(
                                     FieldConstants.LeftBump.farLeftCorner.plus(
-                                        new Translation2d(DriveConstants.fullApothemX + 0.5, 0)),
-                                    Rotation2d.fromDegrees(-90)))
+                                        new Translation2d(DriveConstants.fullApothemX + 0.4, 0)),
+                                    Rotation2d.fromDegrees(-105)))
                             .build())
                     .build(),
                 PathRequestSegment.builder()
@@ -918,11 +924,11 @@ public class DriveTrajectories {
                                 new Pose2d(
                                     FieldConstants.LeftBump.farRightCorner.plus(
                                         new Translation2d(
-                                            DriveConstants.fullApothemX + 0.5,
+                                            DriveConstants.fullApothemX + 0.4,
                                             DriveConstants.fullApothemX + 0.2)),
-                                    Rotation2d.fromDegrees(-90)))
+                                    Rotation2d.fromDegrees(-105)))
                             .build())
-                    .keepInLaneWidth(0.08)
+                    .keepInLaneWidth(0.05)
                     .maxAngularVelocity(0.1)
                     .build());
 

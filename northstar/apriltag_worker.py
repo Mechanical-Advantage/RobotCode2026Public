@@ -13,7 +13,7 @@ from config.config import ConfigStore
 from output.overlay_util import overlay_image_observation
 from output.StreamServer import MjpegServer
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-from pipeline.FiducialDetector import ArucoFiducialDetector
+from pipeline.FiducialDetector import ArucoMaxFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from pipeline.TagAngleCalculator import CameraMatrixTagAngleCalculator
 from vision_types import CameraPoseObservation, FiducialImageObservation, FiducialPoseObservation, TagAngleObservation
@@ -34,7 +34,7 @@ def apriltag_worker(
     ],
     server_port: int,
 ):
-    fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
+    fiducial_detector = ArucoMaxFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
     tag_angle_calculator = CameraMatrixTagAngleCalculator()
     tag_pose_estimator = SquareTargetPoseEstimator()

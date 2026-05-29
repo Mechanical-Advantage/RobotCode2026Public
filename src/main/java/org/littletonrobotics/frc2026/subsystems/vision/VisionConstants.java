@@ -54,7 +54,7 @@ public class VisionConstants {
 
   private static int monoExposure = 1800;
   private static double monoGain = 15.0;
-  private static double monoDenoise = 1.0;
+  private static double monoDenoise = 0.0;
   private static int colorExposure = 4500;
   private static double colorGain = 5.0;
   private static double cameraBalanceRed = 1.2;

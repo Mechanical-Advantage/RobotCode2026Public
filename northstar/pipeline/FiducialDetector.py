@@ -30,3 +30,17 @@ class ArucoFiducialDetector(FiducialDetector):
         if len(corners) == 0:
             return []
         return [FiducialImageObservation(id[0], corner) for id, corner in zip(ids, corners)]
+
+
+class ArucoMaxFiducialDetector(FiducialDetector):
+    def __init__(self, dictionary_id) -> None:
+        import aruco_max
+        self._detector = aruco_max.ArucoMaxDetector(cv2.aruco.DICT_APRILTAG_36h11)
+
+    def detect_fiducials(self, image: cv2.Mat, config_store: ConfigStore) -> List[FiducialImageObservation]:
+        if len(image.shape) > 2:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        corners, ids = self._detector.detect(image)
+        if len(corners) == 0:
+            return []
+        return [FiducialImageObservation(id, corner) for id, corner in zip(ids, corners)]
