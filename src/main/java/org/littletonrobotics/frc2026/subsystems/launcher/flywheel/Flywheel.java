@@ -70,7 +70,7 @@ public class Flywheel extends FullSubsystem {
       new LoggedTunableNumber("Flywheel/BangBangMinDistance", 3.25);
   private static final LoggedTunableNumber pidSetpointOffset =
       new LoggedTunableNumber(
-          "Flywheel/PIDSetpointOffset", 2.0); // Offset up when not running bang-bang
+          "Flywheel/PIDSetpointOffset", 4.0); // Offset up when not running bang-bang
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP", 0.6);
   private static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD", 0.0);
   private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.28);

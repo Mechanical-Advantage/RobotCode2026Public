@@ -733,7 +733,13 @@ public class AutoCommands {
                   1.0);
 
           double xPosition = AllianceFlipUtil.applyX(currentPose.getX());
-          if (xPosition < FieldConstants.LinesVertical.neutralZoneNear + 1.0) {
+          if (xPosition < FieldConstants.LinesVertical.neutralZoneNear + 1.0
+              && (currentPose.getY()
+                      < FieldConstants.LinesHorizontal.rightBumpStart
+                          - DriveConstants.fullBaseRadius
+                  || currentPose.getY()
+                      > FieldConstants.LinesHorizontal.leftBumpEnd
+                          + DriveConstants.fullBaseRadius)) {
             t = 0.0;
           }
 
