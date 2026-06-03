@@ -69,9 +69,9 @@ public class VisionConstants {
                       (Double timestamp) -> {
                         return Optional.of(
                             new Pose3d(
-                                -0.324607,
-                                0.000279,
-                                0.408737,
+                                -0.323804,
+                                0.0,
+                                0.351340,
                                 new Rotation3d(
                                     0.0,
                                     Units.degreesToRadians(
