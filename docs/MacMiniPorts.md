@@ -1,4 +1,4 @@
-# Mac Mini Ports
+# Mac mini Ports
 
 Location IDs represent **USB 2** devices connected directly to the port and are *not* accurate for USB 3 devices or USB/Thunderbolt hubs.
 

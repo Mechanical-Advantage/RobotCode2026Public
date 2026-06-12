@@ -11,94 +11,109 @@ import edu.wpi.first.math.MathUtil;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.junction.Logger;
 
+/**
+ * Battery state estimator using a single RC Thevenin model with Peukert correction. SOC is
+ * determined from open-loop coulomb counting, which is then used to determine OCV, R0, and RP. VP
+ * (polarization voltage) is determined using RC model and corrected from battery terminal voltage
+ * measurements using Kalman gain. Model structure based on this paper
+ * (https://doi.org/10.1016/j.ifacol.2022.06.031).
+ *
+ * <p>Battery parameters are for MK Powered battery based on this post
+ * (https://www.chiefdelphi.com/t/detailed-frc-battery-comparison-for-2026/508077/22) fitted using
+ * data from logs.
+ */
 public class BatteryEstimator {
   // Battery
-  private static final double CAPACITY_AS = 18.0 * 3600.0;
+  private static final double CAPACITY_AH = 19.75;
+  private static final double CAPACITY_AS = CAPACITY_AH * 3600.0;
 
-  // R0(soc) = R0_BASE + R0_KNEE_GAIN * exp(-R0_KNEE_RATE * soc)
-  private static final double R0_BASE = 0.012;
-  private static final double R0_KNEE_GAIN = 0.005;
-  private static final double R0_KNEE_RATE = 2.0;
+  // OCV(soc) = OCV_VOLTS[i] + t * (OCV_VOLTS[i + 1] - OCV_VOLTS[i])
+  private static final double[] OCV_SOC_KNOTS = {0.0, 0.2, 0.4, 0.6, 0.8, 1.0};
+  private static final double[] OCV_VOLTS = {12.112, 12.113, 12.311, 12.401, 12.535, 13.196};
+
+  // R0(soc) = R0_BASE + R0_KNEE_GAIN * exp(-R0_KNEE_RATE * (R0_KNEE_SOC - soc))
+  private static final double R0_BASE = 0.01181;
+  private static final double R0_KNEE_GAIN = 0.00335;
+  private static final double R0_KNEE_RATE = 1.36726;
   private static final double R0_KNEE_SOC = 0.4;
 
-  // RC polarization
-  private static final double RP_BASE = 0.003;
-  private static final double RP_SOC_SCALE = 3.0;
+  // Single RC polarization
+  private static final double RP_BASE = 0.00274;
+  private static final double RP_SOC_SCALE = 2.10529;
   private static final double CP = 400.0;
 
   // Peukert (SOC-scaled)
-  private static final double PEUKERT_BASE = 1.05;
+  private static final double PEUKERT_BASE = 1.07;
   private static final double PEUKERT_SOC_SCALE = 0.1;
-  private static final double I_NOMINAL = 0.9;
+  private static final double I_NOMINAL = CAPACITY_AH / 20.0;
 
-  // Voltage feedback correction — steady-state Kalman gain form:
-  //   gain = MAX_GAIN / (1 + (I / NOISE_SCALE)^2)
-  // MAX_GAIN: Max correction strength for V_p
-  // NOISE_SCALE: Current (amps) at which gain drops to half.
-  private static final double MAX_GAIN = 0.2;
-  private static final double NOISE_SCALE = 100.0;
+  // Variance parameters
+  private static final double Q_VP = Math.pow(0.02, 2.0);
+  private static final double R_VBATT = Math.pow(0.1, 2.0);
+  private static final double R0_UNCERTAINTY = Math.pow(0.0015, 2.0);
 
   // State
   private double soc;
   private double vP;
+  private double pVP;
 
   public BatteryEstimator() {
     setInitialVoltage(12.5, 0.0);
   }
 
   void setInitialVoltage(double initialVoltage, double initialCurrent) {
-    double estimatedOcv = initialVoltage + (initialCurrent * R0_BASE) + (initialCurrent * RP_BASE);
+    double estimatedOcv = initialVoltage + initialCurrent * (R0_BASE + RP_BASE);
     soc = MathUtil.clamp(calculateSoc(estimatedOcv), 0.0, 1.0);
     vP = initialCurrent * getRp(soc);
+    pVP = Q_VP;
   }
 
-  double calculateMaxCurrent(double minVoltageThreshold, double budgetPeriodSecs) {
-    double r0 = getR0(soc);
-    double maxCurrent = (calculateOcv(soc) - vP - minVoltageThreshold) / r0;
-    double derating = 1.0 - budgetPeriodSecs / (r0 * CP);
-    return Math.max(0.0, maxCurrent * derating);
+  double calculateMaxCurrent(double minVoltageThreshold) {
+    return Math.max(0.0, (calculateOcv(soc) - vP - minVoltageThreshold) / getR0(soc));
   }
 
   /**
-   * Runs one estimator cycle: propagate state with physics, then correct from measured voltage.
+   * Update battery state estimate
    *
    * @param current Total current draw (Amperes).
    * @param measuredVoltage Terminal voltage from the PDP/PDH.
    */
   void update(double current, double measuredVoltage) {
     double dt = Constants.loopPeriodSecs;
-    // Predict
-    // SOC (coulomb counting with Peukert correction)
+
+    // Coloumb counting with peukert correction
     double effectiveAmps = current;
     if (current > I_NOMINAL) {
       double peukert = PEUKERT_BASE + PEUKERT_SOC_SCALE * (1.0 - soc);
       effectiveAmps = current * Math.pow(current / I_NOMINAL, peukert - 1.0);
-    }
-    soc = MathUtil.clamp(soc - (effectiveAmps * dt) / CAPACITY_AS, 0.0, 1.0);
+    } else effectiveAmps = current;
+    soc = MathUtil.clamp(soc - effectiveAmps * dt / CAPACITY_AS, 0.0, 1.0);
 
-    // Polarization voltage (exact RC step for constant current over dt)
-    vP = stepRc(vP, current, getRp(soc), dt);
+    // Update polarization voltage
+    double rp = getRp(soc);
+    // Calculate vP(dt) using RC dynamics: dV/dt = (I * R - V) / (R * C)
+    double tau = rp * CP;
+    double vP_inf = current * rp;
+    double decay = Math.exp(-dt / tau);
+    vP = vP_inf - (vP_inf - vP) * decay;
+    // Calculate pVP-
+    pVP = Math.pow(decay, 2.0) * pVP + Q_VP * dt;
 
-    // Correct:
-    double predicted = calculateOcv(soc) - (current * getR0(soc)) - vP;
-    double error = measuredVoltage - predicted;
-    double gain = MAX_GAIN / (1.0 + (current / NOISE_SCALE) * (current / NOISE_SCALE));
-    vP -= error * gain;
+    // Correct vP from voltage measurement
+    double r0 = getR0(soc);
+    double ocv = calculateOcv(soc);
+    double predicted = ocv - current * r0 - vP;
+    double K = pVP / (pVP + (R_VBATT + R0_UNCERTAINTY * current * current));
+    vP += K * -(measuredVoltage - predicted);
+    pVP *= (1.0 - K);
 
-    // Log state
+    // Log
     double corrected = calculateOcv(soc) - (current * getR0(soc)) - vP;
-    Logger.recordOutput("BatteryModel/PredictedVoltage", corrected, "volts");
+    Logger.recordOutput("BatteryModel/EstimatedVoltage", corrected, "volts");
     Logger.recordOutput("BatteryModel/OCV", calculateOcv(soc), "volts");
     Logger.recordOutput("BatteryModel/SOC", soc);
     Logger.recordOutput("BatteryModel/VP", vP, "volts");
-    Logger.recordOutput("BatteryModel/CorrectionGain", gain);
-    Logger.recordOutput("BatteryModel/PredictionError", error, "volts");
-  }
-
-  private static double stepRc(double vP, double current, double rp, double dt) {
-    double vpSteady = current * rp;
-    double decay = Math.exp(-dt / (rp * CP));
-    return vpSteady + (vP - vpSteady) * decay;
+    Logger.recordOutput("BatteryModel/P_VP", pVP);
   }
 
   private static double getR0(double soc) {
@@ -111,14 +126,24 @@ public class BatteryEstimator {
   }
 
   private static double calculateOcv(double soc) {
-    if (soc > 0.8) return 12.6 + ((soc - 0.8) / 0.2) * 0.4;
-    if (soc > 0.2) return 12.0 + ((soc - 0.2) / 0.6) * 0.6;
-    return 11.5 + (soc / 0.2) * 0.5;
+    soc = MathUtil.clamp(soc, 0.0, 1.0);
+    for (int i = 0; i < OCV_SOC_KNOTS.length - 1; i++) {
+      if (soc <= OCV_SOC_KNOTS[i + 1]) {
+        double t = (soc - OCV_SOC_KNOTS[i]) / (OCV_SOC_KNOTS[i + 1] - OCV_SOC_KNOTS[i]);
+        return OCV_VOLTS[i] + t * (OCV_VOLTS[i + 1] - OCV_VOLTS[i]);
+      }
+    }
+    return OCV_VOLTS[OCV_VOLTS.length - 1];
   }
 
   private static double calculateSoc(double ocv) {
-    if (ocv > 12.6) return ((ocv - 12.6) / 0.4) * 0.2 + 0.8;
-    if (ocv > 12.0) return ocv - 11.8;
-    return ((ocv - 11.5) / 0.5) * 0.2;
+    ocv = MathUtil.clamp(ocv, OCV_VOLTS[0], OCV_VOLTS[OCV_VOLTS.length - 1]);
+    for (int i = 0; i < OCV_VOLTS.length - 1; i++) {
+      if (ocv <= OCV_VOLTS[i + 1]) {
+        double t = (ocv - OCV_VOLTS[i]) / (OCV_VOLTS[i + 1] - OCV_VOLTS[i]);
+        return OCV_SOC_KNOTS[i] + t * (OCV_SOC_KNOTS[i + 1] - OCV_SOC_KNOTS[i]);
+      }
+    }
+    return OCV_SOC_KNOTS[OCV_SOC_KNOTS.length - 1];
   }
 }

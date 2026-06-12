@@ -26,7 +26,6 @@ public class FinanceDepartment extends FullSubsystem {
   private static final double maxBudgetAmps = 200.0;
   private static final double breakerNiceness = 0.05;
   private static final double budgetWarningThreshold = 180.0;
-  private static final double configPeriodSeconds = 0.1;
   // Allow ramping from other subsystems
   private static final double budgetHeadroom = 0.9;
   // Time we can run max budget before trip
@@ -100,7 +99,7 @@ public class FinanceDepartment extends FullSubsystem {
     breaker.update(energyLogger.getTotalCurrent());
 
     // Calculate budgets
-    double batteryMaxCurrent = battery.calculateMaxCurrent(minVoltageBrownout, configPeriodSeconds);
+    double batteryMaxCurrent = battery.calculateMaxCurrent(minVoltageBrownout);
     double breakerMaxCurrent = breaker.calculateMaxCurrent(breakerDangerHorizonSecs);
     Logger.recordOutput("FinanceDepartment/BatteryMaxCurrent", batteryMaxCurrent);
     Logger.recordOutput("FinanceDepartment/BreakerMaxCurrent", breakerMaxCurrent);
