@@ -48,6 +48,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
+  private Command[] disruptorCommands;
   private double autoStart;
   private boolean autoMessagePrinted;
   private RobotContainer robotContainer;
@@ -301,6 +302,15 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
+
+    if (Constants.getMode() == Mode.SIM) {
+      disruptorCommands = robotContainer.getDisruptorCommands();
+      for (Command disruptorCommand : disruptorCommands) {
+        if (disruptorCommand != null) {
+          CommandScheduler.getInstance().schedule(disruptorCommand);
+        }
+      }
+    }
   }
 
   /** This function is called periodically during autonomous. */
@@ -312,6 +322,13 @@ public class Robot extends LoggedRobot {
   public void teleopInit() {
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
+    }
+    if (disruptorCommands != null) {
+      for (Command disruptorCommand : disruptorCommands) {
+        if (disruptorCommand != null) {
+          disruptorCommand.cancel();
+        }
+      }
     }
   }
 

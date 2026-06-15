@@ -458,7 +458,8 @@ public class GenerateTrajectories {
           .forEach(
               (path) -> {
                 String filename = path.getFileName().toString();
-                if (!filename.endsWith(".traj") && !filename.endsWith(".chor")) return;
+                if (!filename.endsWith(".traj") && !filename.endsWith(".chor")
+                    || filename.startsWith("manual_")) return;
                 String[] components = filename.split("\\.");
                 if (components.length == 2
                     && !completedPaths.contains(components[0])

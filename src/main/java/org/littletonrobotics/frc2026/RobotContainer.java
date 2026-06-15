@@ -41,6 +41,7 @@ import org.littletonrobotics.frc2026.Constants.Mode;
 import org.littletonrobotics.frc2026.FieldConstants.AprilTagLayoutType;
 import org.littletonrobotics.frc2026.commands.CompactingCommands;
 import org.littletonrobotics.frc2026.commands.DriveCommands;
+import org.littletonrobotics.frc2026.commands.SimTrajectory;
 import org.littletonrobotics.frc2026.commands.auto.AutoBuilder;
 import org.littletonrobotics.frc2026.salesman.SalesAssociate;
 import org.littletonrobotics.frc2026.salesman.SalesmanSolver;
@@ -73,6 +74,7 @@ import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
 import org.littletonrobotics.frc2026.util.BeachedUtil;
 import org.littletonrobotics.frc2026.util.ContinuousConditionalCommand;
 import org.littletonrobotics.frc2026.util.FuelSim;
+import org.littletonrobotics.frc2026.util.FuelSim.SimRobot;
 import org.littletonrobotics.frc2026.util.HubShiftUtil;
 import org.littletonrobotics.frc2026.util.controllers.OverrideSwitches;
 import org.littletonrobotics.frc2026.util.controllers.RazerWolverineController;
@@ -123,7 +125,9 @@ public class RobotContainer {
   private final Alert aprilTagLayoutAlert = new Alert("", AlertType.kInfo);
 
   // Dashboard inputs and outputs
-  private final AutoSelector autoSelector = new AutoSelector("Auto");
+  private final AutoSelector autoSelector = new AutoSelector("Auto", 6);
+  private AutoSelector[] disruptors;
+
   private final LoggedDashboardChooser<AprilTagLayoutType> aprilTagLayoutChooser;
   private final LoggedNetworkNumber offsetTime =
       new LoggedNetworkNumber("/SmartDashboard/Auto/Offset Time?", 0.0);
@@ -507,6 +511,64 @@ public class RobotContainer {
                 flywheel.stopCommand(),
                 Commands.run(() -> slamtake.setIntakeGoal(IntakeGoal.STOP), slamtake))
             .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+
+    // Competing businesses
+    if (Constants.getMode() == Mode.SIM) configureDisruptors();
+  }
+
+  private void configureDisruptors() {
+    disruptors = new AutoSelector[4];
+    for (int d = 0; d < disruptors.length; d++) {
+      disruptors[d] = new AutoSelector("Disruptor " + (d + 1), 2);
+    }
+
+    AutoQuestion isFriend =
+        new AutoQuestion("Alliance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO));
+    AutoQuestion side =
+        new AutoQuestion("Side?", List.of(AutoQuestionResponse.LEFT, AutoQuestionResponse.RIGHT));
+
+    File vtsFolder = new File(Filesystem.getDeployDirectory(), "vts");
+    File[] tradeSecrets = vtsFolder.listFiles((dir, name) -> name.startsWith("manual_"));
+
+    // Support choreo trajectories created on the choreo GUI (must start with "manual_")
+    if (tradeSecrets != null) {
+      for (int i = 0; i < tradeSecrets.length; i++) {
+        String fileName = tradeSecrets[i].getName();
+        String trajName = fileName.replace(".traj", "");
+
+        for (int d = 0; d < disruptors.length; d++) {
+          AutoSelector disruptor = disruptors[d];
+          disruptor.addRoutine(
+              trajName,
+              List.of(isFriend, side),
+              new SimTrajectory(
+                  trajName,
+                  fuelSim,
+                  d + 1,
+                  () ->
+                      !(disruptor.getResponses().get(0).equals(AutoQuestionResponse.YES)
+                          ^ DriverStation.getAlliance()
+                              .orElse(Alliance.Blue)
+                              .equals(Alliance.Blue)),
+                  () -> disruptor.getResponses().get(1).equals(AutoQuestionResponse.RIGHT)));
+        }
+      }
+    }
+
+    for (int d = 0; d < disruptors.length; d++) {
+      AutoSelector disruptor = disruptors[d];
+      disruptor.addRoutine(
+          "Beach Vacation",
+          List.of(isFriend, side),
+          new SimTrajectory(
+              "leftTrenchStartNeutralSweep",
+              fuelSim,
+              d + 1,
+              () ->
+                  !(disruptor.getResponses().get(0).equals(AutoQuestionResponse.YES)
+                      ^ DriverStation.getAlliance().orElse(Alliance.Blue).equals(Alliance.Blue)),
+              () -> disruptor.getResponses().get(1).equals(AutoQuestionResponse.RIGHT)));
+    }
   }
 
   /** Create the bindings between buttons and commands. */
@@ -1017,14 +1079,15 @@ public class RobotContainer {
   }
 
   private void configureFuelSim() {
-    fuelSim.registerRobot(
-        DriveConstants.fullWidthX,
-        DriveConstants.fullWidthY,
-        Units.inchesToMeters(6.0),
-        () -> RobotState.getInstance().getEstimatedPose(),
-        () -> RobotState.getInstance().getFieldVelocity());
+    SimRobot simRobot =
+        fuelSim.registerRobot(
+            DriveConstants.fullWidthX,
+            DriveConstants.fullWidthY,
+            Units.inchesToMeters(6.0),
+            () -> RobotState.getInstance().getEstimatedPose(),
+            () -> RobotState.getInstance().getFieldVelocity());
 
-    fuelSim.registerIntake(
+    simRobot.registerIntake(
         DriveConstants.intakeNearX,
         DriveConstants.intakeFarX,
         -DriveConstants.fullApothemY,
@@ -1049,6 +1112,13 @@ public class RobotContainer {
                   fuelSim.spawnStartingFuel();
                   simFuelCount.setFuelStored(8);
                 }));
+    RobotModeTriggers.autonomous()
+        .onFalse(
+            Commands.runOnce(
+                    () -> {
+                      fuelSim.clearAdditionalRobots();
+                    })
+                .ignoringDisable(true));
   }
 
   public void updateFuelSim() {
@@ -1099,5 +1169,14 @@ public class RobotContainer {
   /** Returns the autonomous command for the Robot class. */
   public Command getAutonomousCommand() {
     return autoSelector.getCommand();
+  }
+
+  /** Returns the autonomous command for the disruptors. */
+  public Command[] getDisruptorCommands() {
+    Command[] disruptorCommands = new Command[4];
+    for (int i = 0; i < 4; i++) {
+      disruptorCommands[i] = disruptors[i].getCommand();
+    }
+    return disruptorCommands;
   }
 }
