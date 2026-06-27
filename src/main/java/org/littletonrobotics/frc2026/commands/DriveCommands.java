@@ -25,8 +25,10 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.frc2026.RobotState;
 import org.littletonrobotics.frc2026.subsystems.drive.Drive;
 import org.littletonrobotics.frc2026.subsystems.drive.DriveConstants;
+import org.littletonrobotics.idun.IdunConstants;
 import org.littletonrobotics.junction.Logger;
 
+@IdunConstants
 public class DriveCommands {
   public static final double deadband = 0.1;
   private static final double wheelRadiusMaxVelocity = 0.25; // Rad/Sec

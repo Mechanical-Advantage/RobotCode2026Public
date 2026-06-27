@@ -1,0 +1,28 @@
+import java.util.Properties
+
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+// Get WPILib version
+def rootProjectProperties = new Properties()
+def rootGradlePropertiesFile;
+if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+    rootGradlePropertiesFile = project.rootDir.parentFile.toPath().resolve("gradle.properties").toFile();
+} else {
+    rootGradlePropertiesFile = project.rootDir.parentFile.parentFile.toPath().resolve("gradle.properties").toFile();
+}
+
+rootGradlePropertiesFile.withInputStream { stream -> rootProjectProperties.load(stream) }
+def wpilibVersion = rootProjectProperties.getProperty("wpilibVersion")
+
+dependencies {
+    implementation "edu.wpi.first:GradleRIO:${wpilibVersion}"
+    implementation "javax.inject:javax.inject:1"
+    implementation gradleApi()
+}

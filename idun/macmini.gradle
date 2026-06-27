@@ -1,0 +1,30 @@
+import org.littletonrobotics.gradlerio.*;
+import edu.wpi.first.deployutils.deploy.DeployExtension
+import edu.wpi.first.gradlerio.deploy.FRCExtension
+import edu.wpi.first.gradlerio.deploy.roborio.DSDeployLocation
+import edu.wpi.first.deployutils.deploy.NamedObjectFactory
+
+try {
+    DeployExtension deployExt = project.extensions.getByType(DeployExtension.class)
+    FRCExtension frcExt = project.extensions.getByType(FRCExtension.class)
+
+    deployExt.getTargets().registerFactory(MacMini.class) { String targetName ->
+        MacMini macMiniTarget = project.getObjects().newInstance(MacMini.class, targetName, project, deployExt, frcExt)
+
+        def objectFactoryForTarget = macMiniTarget.getProject().getObjects()
+        def locationsContainer = macMiniTarget.getLocations()
+        def artifactsContainer = macMiniTarget.getArtifacts()
+
+        NamedObjectFactory.registerType(DSDeployLocation.class, locationsContainer, macMiniTarget, objectFactoryForTarget)
+        NamedObjectFactory.registerType(MacMiniJavaArtifact.class, artifactsContainer, macMiniTarget, objectFactoryForTarget)
+        NamedObjectFactory.registerType(MacMiniJNILibraryArtifact.class, artifactsContainer, macMiniTarget, objectFactoryForTarget)
+        NamedObjectFactory.registerType(MacMiniProgramStartArtifact.class, artifactsContainer, macMiniTarget, objectFactoryForTarget)
+        NamedObjectFactory.registerType(MacMiniRobotCommandArtifact.class, artifactsContainer, macMiniTarget, objectFactoryForTarget)
+        NamedObjectFactory.registerType(MacMiniFileTreeArtifact.class, artifactsContainer, macMiniTarget, objectFactoryForTarget)
+
+        return macMiniTarget
+    }
+} catch (Exception e) {
+    project.logger.error("Failed to register factory for MacMini. Error: " + e.getMessage(), e)
+    throw e
+}

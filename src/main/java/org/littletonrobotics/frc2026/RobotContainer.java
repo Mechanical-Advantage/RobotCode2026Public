@@ -26,7 +26,9 @@ import org.littletonrobotics.frc2026.FieldConstants.AprilTagLayoutType;
 import org.littletonrobotics.frc2026.commands.DriveCommands;
 import org.littletonrobotics.frc2026.subsystems.drive.Drive;
 import org.littletonrobotics.frc2026.subsystems.drive.GyroIO;
+import org.littletonrobotics.frc2026.subsystems.drive.GyroIOIdun;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIO;
+import org.littletonrobotics.frc2026.subsystems.drive.ModuleIOIdun;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2026.subsystems.hopper.Hopper;
 import org.littletonrobotics.frc2026.subsystems.intake.Intake;
@@ -34,17 +36,23 @@ import org.littletonrobotics.frc2026.subsystems.kicker.Kicker;
 import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
 import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.Flywheel;
 import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIOIdun;
 import org.littletonrobotics.frc2026.subsystems.launcher.hood.Hood;
 import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIOIdun;
 import org.littletonrobotics.frc2026.subsystems.launcher.turret.Turret;
 import org.littletonrobotics.frc2026.subsystems.launcher.turret.TurretIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.turret.TurretIOIdun;
 import org.littletonrobotics.frc2026.subsystems.launcher.turret.TurretIOSim;
 import org.littletonrobotics.frc2026.subsystems.leds.Leds;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIOHAL;
+import org.littletonrobotics.frc2026.subsystems.leds.LedsIOIdun;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO;
+import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIOIdun;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
 import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
+import org.littletonrobotics.frc2026.subsystems.vision.VisionIONorthstar;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2026.util.controllers.OverrideSwitches;
 import org.littletonrobotics.frc2026.util.controllers.RazerWolverineController;
@@ -93,11 +101,43 @@ public class RobotContainer {
     if (Constants.getMode() != Constants.Mode.REPLAY) {
       switch (Constants.robot) {
         case COMPBOT:
-          // Not implemented
+          drive =
+              new Drive(
+                  new GyroIOIdun(),
+                  new ModuleIOIdun("Module0"),
+                  new ModuleIOIdun("Module1"),
+                  new ModuleIOIdun("Module2"),
+                  new ModuleIOIdun("Module3"));
+          vision = new Vision(this::getSelectedAprilTagLayout);
+          leds = new Leds(new LedsIOIdun());
           break;
 
         case ALPHABOT:
-          // Not implemented
+          drive =
+              new Drive(
+                  new GyroIOIdun(),
+                  new ModuleIOIdun("Module0"),
+                  new ModuleIOIdun("Module1"),
+                  new ModuleIOIdun("Module2"),
+                  new ModuleIOIdun("Module3"));
+          intake = new Intake(new RollerSystemIOIdun("IntakeRoller"));
+          hopper =
+              new Hopper(
+                  new RollerSystemIOIdun("HopperRoller"),
+                  new RollerSystemIOIdun("LeftIndexerRoller"),
+                  new RollerSystemIOIdun("RightIndexerRoller"));
+          kicker =
+              new Kicker(
+                  new RollerSystemIOIdun("KickerRollerFront"),
+                  new RollerSystemIOIdun("KickerRollerBack"));
+          hood = new Hood(new HoodIOIdun());
+          flywheel = new Flywheel(new FlywheelIOIdun());
+          turret = new Turret(new TurretIOIdun());
+          vision =
+              new Vision(
+                  this::getSelectedAprilTagLayout,
+                  new VisionIONorthstar(this::getSelectedAprilTagLayout, 0));
+          leds = new Leds(new LedsIOIdun());
           break;
 
         case SIMBOT:

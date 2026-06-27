@@ -7,14 +7,21 @@
 
 package org.littletonrobotics.frc2026.subsystems.leds;
 
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface LedsIO {
   @AutoLog
-  public static class LedsIOInputs {}
+  public static class LedsIOInputs {
+    // FPGA time allows patterns to be synchronized across the RIO and Mac mini (unused)
+    public double fpgaTime = 0.0;
+  }
 
   public static class LedsIOOutputs {
     public byte[] buffer = new byte[0];
+
+    public boolean ready = false;
   }
 
   public default void updateInputs(LedsIOInputs inputs) {}

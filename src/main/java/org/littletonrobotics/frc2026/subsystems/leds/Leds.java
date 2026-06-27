@@ -10,6 +10,8 @@ package org.littletonrobotics.frc2026.subsystems.leds;
 import static org.littletonrobotics.frc2026.subsystems.leds.LedConstants.*;
 
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
@@ -20,6 +22,7 @@ import java.util.Optional;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO.LedsIOOutputs;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.VirtualSubsystem;
+import org.littletonrobotics.idun.IdunServer;
 import org.littletonrobotics.junction.Logger;
 
 public class Leds extends VirtualSubsystem {
@@ -46,6 +49,10 @@ public class Leds extends VirtualSubsystem {
 
   // Constants
   private static final Section fullSection = new Section(0, length);
+
+  private static final Alert simulatedStartAlert =
+      new Alert("Simulating legacy startup. Do not enable outside of 6328 shop.", AlertType.kInfo);
+  private static boolean wasEnabledFlag = false;
 
   public Leds(LedsIO io) {
     this.io = io;
@@ -127,9 +134,16 @@ public class Leds extends VirtualSubsystem {
       // Not implemented
     }
 
-    // Override with loading animation
-    if (Timer.getTimestamp() < 30.0) {
-      breath(fullSection, Color.kBlack, Color.kWhite, startupBreathDuration, Timer.getTimestamp());
+    // Override with simulated start
+    boolean simulatedStart =
+        DriverStation.isDisabled()
+            && !wasEnabledFlag
+            && IdunServer.isConnected()
+            && inputs.fpgaTime < 20.0;
+    simulatedStartAlert.set(simulatedStart);
+    if (simulatedStart) {
+      breath(fullSection, Color.kBlack, Color.kWhite, startupBreathDuration, inputs.fpgaTime);
+      setLED(0, Color.kWhite); // First LED indicates that Idun is ready
     }
 
     // Send to buffer
@@ -137,6 +151,7 @@ public class Leds extends VirtualSubsystem {
     try {
       outputs.buffer = (byte[]) bufferField.get(buffer);
 
+      outputs.ready = inputs.fpgaTime > 0.0;
     } catch (IllegalArgumentException | IllegalAccessException e) {
       e.printStackTrace();
     }

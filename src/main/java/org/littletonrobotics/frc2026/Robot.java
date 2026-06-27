@@ -22,6 +22,8 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -32,18 +34,24 @@ import org.littletonrobotics.frc2026.Constants.Mode;
 import org.littletonrobotics.frc2026.Constants.RobotType;
 import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
 import org.littletonrobotics.frc2026.subsystems.leds.Leds;
+import org.littletonrobotics.frc2026.util.DarwinThreading;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.VirtualSubsystem;
+import org.littletonrobotics.frc2026.util.wpilogxz.WPILOGXZReader;
+import org.littletonrobotics.frc2026.util.wpilogxz.WPILOGXZWriter;
+import org.littletonrobotics.idun.IdunPlatform;
+import org.littletonrobotics.idun.IdunRobot;
+import org.littletonrobotics.idun.IdunServer;
 import org.littletonrobotics.junction.AutoLogOutputManager;
 import org.littletonrobotics.junction.LogFileUtil;
-import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-public class Robot extends LoggedRobot {
+public class Robot extends IdunRobot {
   private static final double lowBatteryVoltage = 11.0;
   private static final double lowBatteryDisabledTime = 2.0;
 
@@ -57,6 +65,11 @@ public class Robot extends LoggedRobot {
       new Alert(
           "Battery voltage is very low, turn off the robot or replace the battery to avoid damage.",
           AlertType.kWarning);
+
+  private final Alert idunDisconnectedAlert =
+      new Alert("No connection to roboRIO 💔", AlertType.kError);
+  private LoggedNetworkBoolean restartCodeButton =
+      new LoggedNetworkBoolean("SmartDashboard/Restart Code");
 
   public Robot() {
     super(Constants.loopPeriodSecs);
@@ -91,7 +104,7 @@ public class Robot extends LoggedRobot {
     // Set up data receivers & replay source
     switch (Constants.getMode()) {
       case REAL:
-        Logger.addDataReceiver(new WPILOGWriter());
+        Logger.addDataReceiver(new WPILOGXZWriter());
         Logger.addDataReceiver(new NT4Publisher());
         break;
 
@@ -104,16 +117,30 @@ public class Robot extends LoggedRobot {
         // Replaying a log, set up replay source
         String inPath = LogFileUtil.findReplayLog();
         String outPath = LogFileUtil.addPathSuffix(inPath, "_sim");
-        Logger.setReplaySource(new WPILOGReader(inPath));
+        Logger.setReplaySource(
+            inPath.endsWith(".wpilogxz") ? new WPILOGXZReader(inPath) : new WPILOGReader(inPath));
+        if (outPath.endsWith(".wpilogxz")) {
+          outPath = outPath.substring(0, outPath.length() - 2);
+        }
         Logger.addDataReceiver(new WPILOGWriter(outPath));
         break;
     }
 
     // Set timing mode
-    setUseTiming(Constants.getMode() != Mode.REPLAY);
+    setTimingMode(
+        switch (Constants.getMode()) {
+          case REAL -> TimingMode.SYNC;
+          case SIM -> TimingMode.FIXED;
+          case REPLAY -> TimingMode.FAST;
+        });
 
     // Start AdvantageKit logger
     Logger.start();
+
+    // Start Idun server
+    if (Constants.getMode() == Mode.REAL) {
+      IdunServer.start();
+    }
 
     // Adjust loop overrun warning timeout
     try {
@@ -177,6 +204,21 @@ public class Robot extends LoggedRobot {
       DriverStationSim.notifyNewData();
     }
 
+    // Set up restart code button
+    restartCodeButton.set(false);
+    new Trigger(restartCodeButton::get)
+        .onTrue(
+            Commands.runOnce(
+                    () -> {
+                      System.out.println("********** Robot program restarting **********");
+                      IdunServer.requestClientCodeRestart();
+                    })
+                .andThen(
+                    // Wait for client to receive message (and ensure button is fully reset)
+                    Commands.run(() -> restartCodeButton.set(false)).withTimeout(0.2),
+                    Commands.runOnce(() -> System.exit(0)))
+                .ignoringDisable(true));
+
     // Reset alert timers
     disabledTimer.restart();
 
@@ -185,11 +227,17 @@ public class Robot extends LoggedRobot {
 
     // Instantiate RobotContainer
     robotContainer = new RobotContainer();
+
+    // Configure scheduling priority on Mac Mini
+    if (IdunPlatform.isRobot) {
+      DarwinThreading.setTimeConstraintPolicy(5, 5, 5);
+    }
   }
 
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
+    if (Constants.getMode() == Mode.REAL) IdunServer.processIncoming();
 
     // Main periodic functions
     LoggedTracer.reset();
@@ -228,6 +276,9 @@ public class Robot extends LoggedRobot {
     // Clear launching parameters
     LaunchCalculator.getInstance().clearLaunchingParameters();
 
+    // Update Idun alert
+    idunDisconnectedAlert.set(IdunPlatform.isRobot && !IdunServer.isConnected());
+
     // Update RobotContainer dashboard outputs
     robotContainer.updateDashboardOutputs();
 
@@ -236,11 +287,13 @@ public class Robot extends LoggedRobot {
 
     // Record cycle time
     LoggedTracer.record("RobotPeriodic");
+
+    if (Constants.getMode() == Mode.REAL) IdunServer.processOutputs();
   }
 
   /** Whether to display alerts related to hardware faults. */
   public static boolean showHardwareAlerts() {
-    return Constants.getMode() != Mode.SIM && Timer.getTimestamp() > 30.0;
+    return Constants.getMode() != Mode.SIM && IdunServer.isConnected();
   }
 
   /** This function is called once when the robot is disabled. */

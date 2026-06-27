@@ -7,18 +7,20 @@
 
 package org.littletonrobotics.frc2026;
 
-import edu.wpi.first.wpilibj.RobotBase;
+import org.littletonrobotics.idun.IdunConstants;
+import org.littletonrobotics.idun.IdunPlatform;
 
+@IdunConstants
 public final class Constants {
   public static final RobotType robot = RobotType.COMPBOT;
   public static final boolean tuningMode = false;
 
-  public static final double loopPeriodSecs = 0.02;
-  public static final double loopPeriodWatchdogSecs = 0.2;
+  public static final double loopPeriodSecs = 0.005;
+  public static final double loopPeriodWatchdogSecs = 0.1;
 
   public static Mode getMode() {
     return switch (robot) {
-      case COMPBOT, ALPHABOT -> RobotBase.isReal() ? Mode.REAL : Mode.REPLAY;
+      case COMPBOT, ALPHABOT -> IdunPlatform.isRobot ? Mode.REAL : Mode.REPLAY;
       case SIMBOT -> Mode.SIM;
     };
   }

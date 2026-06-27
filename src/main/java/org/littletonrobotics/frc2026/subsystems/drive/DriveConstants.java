@@ -11,7 +11,9 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.Constants.RobotType;
+import org.littletonrobotics.idun.IdunConstants;
 
+@IdunConstants
 public class DriveConstants {
   // MARK: - COMPBOT Constants
 

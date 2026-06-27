@@ -7,8 +7,10 @@
 
 package org.littletonrobotics.frc2026.subsystems.launcher.hood;
 
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface HoodIO {
 
   @AutoLog

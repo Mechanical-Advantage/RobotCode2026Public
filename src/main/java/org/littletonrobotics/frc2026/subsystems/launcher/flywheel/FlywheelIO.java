@@ -7,8 +7,10 @@
 
 package org.littletonrobotics.frc2026.subsystems.launcher.flywheel;
 
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface FlywheelIO {
   @AutoLog
   public static class FlywheelIOInputs {

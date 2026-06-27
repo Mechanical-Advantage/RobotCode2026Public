@@ -1,8 +1,10 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2026.2.1"
+    id "cpp"
+    id "edu.wpi.first.GradleRIO" // WPILib version defined in gradle.properties
     id "com.peterabeles.gversion" version "1.10"
     id "com.diffplug.spotless" version "6.25.0"
+    id "com.google.protobuf" version "0.9.5"
     id "io.freefair.lombok" version "8.4"
 }
 
@@ -11,103 +13,181 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-def ROBOT_MAIN_CLASS = "org.littletonrobotics.frc2026.Main"
+// Protobuf configuration
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.21.12'
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {}
+            }
+            task.builtins {
+                cpp {}
+            }
+        }
+    }
+}
 
-// Define my targets (RoboRIO) and artifacts (deployable files)
+// Configuration for Mac Mini target
+apply from: 'idun/macmini.gradle'
+import org.littletonrobotics.gradlerio.*;
+
+repositories {
+    mavenCentral()
+    maven {
+        url = uri('https://frcmaven.wpi.edu/artifactory/littletonrobotics-mvn-release/')
+    }
+    maven {
+        // Required to access macOS OpenCV builds on non-macOS platforms
+        url = uri('https://frcmaven.wpi.edu/artifactory/thirdparty-mvn-release/')
+    }
+}
+
+// Define my targets (Mac Mini & roboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project DeployUtils.
 deploy {
     targets {
-        roborio(getTargetTypeClass('RoboRIO')) {
-            // Team number is loaded either from the .wpilib/wpilib_preferences.json
-            // or from command line. If not found an exception will be thrown.
-            // You can use getTeamOrDefault(team) instead of getTeamNumber if you
-            // want to store a team number in this file.
+        // Deploy Java project to the Mac Mini
+        macmini(MacMini) {
             team = project.frc.getTeamNumber()
             debug = project.frc.getDebugOrDefault(false)
 
             artifacts {
-                // First part is artifact name, 2nd is artifact type
-                // getTargetTypeClass is a shortcut to get the class type using a string
-
-                frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
-                    jvmArgs.add("-XX:+UnlockExperimentalVMOptions")
-                    jvmArgs.add("-XX:GCTimeRatio=5")
-                    jvmArgs.add("-XX:+UseSerialGC")
-                    jvmArgs.add("-XX:MaxGCPauseMillis=50")
-
-                    final MAX_JAVA_HEAP_SIZE_MB = 100;
-                    jvmArgs.add("-Xmx" + MAX_JAVA_HEAP_SIZE_MB + "M")
-                    jvmArgs.add("-Xms" + MAX_JAVA_HEAP_SIZE_MB + "M")
-                    jvmArgs.add("-XX:+AlwaysPreTouch")
+                macMiniJava(MacMiniJavaArtifact) {
+                    jvmArgs.add('-XX:+UseZGC')
+                    jvmArgs.add('-XX:+UseCompactObjectHeaders')
+                    jvmArgs.add('-Xmx16g')
+                    jvmArgs.add('-XX:ConcGCThreads=10')
+                    jvmArgs.add('-XX:ParallelGCThreads=10')
                 }
 
-                // Static files artifact
-                frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
+                macMiniStaticFileDeploy(MacMiniFileTreeArtifact) {
                     files = project.fileTree('src/main/deploy')
-                    directory = '/home/lvuser/deploy'
+                    directory = 'deploy'
                     deleteOldFiles = true
+                }
+            }
+        }
+
+        // Deploy C++ project to the roboRIO
+        roborio(getTargetTypeClass('RoboRIO')) {
+            team = project.frc.getTeamNumber()
+            debug = project.frc.getDebugOrDefault(false)
+
+            artifacts {
+                frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {}
+            }
+        }
+    }
+}
+
+// Stopping the roboRIO program first ensures that the LEDs do not
+// switch to the disconnected pattern (flashing white).
+deployprogramKillmacminimacmini.mustRunAfter deployprogramKillroborioroborio
+
+// Deploying to the roboRIO fails randomly due to permissions issues
+// (this is an issue with all C++ WPILib projects). To mitigate this,
+// we implement a retry mechanism that spawns child Gradle processes
+// to re-attempt the deploy multiple times.
+project.afterEvaluate {
+    if (project.hasProperty('innerDeploy')) {
+        return
+    }
+
+    def deployTask = tasks.findByName('deploy')
+    if (deployTask) {
+        deployTask.dependsOn.clear()
+        deployTask.doLast {
+            def maxRetries = 3
+            def attempt = 0
+            def success = false
+
+            def isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows()
+            def wrapperName = isWindows ? 'gradlew.bat' : 'gradlew'
+            def wrapperFile = project.rootProject.file(wrapperName)
+
+            while (!success && attempt < maxRetries) {
+                attempt++
+
+                def result = exec {
+                    ignoreExitValue = true
+                    executable = wrapperFile
+                    args 'deploy', '-PinnerDeploy', '-x', 'spotlessApply', '--console=plain'
+                }
+
+                if (result.exitValue == 0) {
+                    success = true
+                } else {
+                    println "\n========== DEPLOY FAILED, RETRYING ==========\n"
+                    if (attempt >= maxRetries) {
+                        throw new GradleException("Deploy failed after $maxRetries attempts. Please check the network connection.")
+                    }
                 }
             }
         }
     }
 }
 
-def deployArtifact = deploy.targets.roborio.artifacts.frcJava
-
-// Set to true to use debug for all targets including JNI, which will drastically impact
-// performance.
-wpi.java.debugJni = false
-
-// Set this to true to enable desktop support.
-def includeDesktopSupport = true
-
 // Configuration for AdvantageKit
 task(replayWatch, type: JavaExec) {
-    mainClass = "org.littletonrobotics.junction.ReplayWatch"
+    mainClass = 'org.littletonrobotics.junction.ReplayWatch'
     classpath = sourceSets.main.runtimeClasspath
 }
 
-// Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
-// Also defines JUnit 4.
+// WPILib Java configuration
+sourceSets {
+    main {
+        java {
+            srcDirs 'src/main/java', 'idun/src/main/java'
+        }
+        proto {
+            srcDir 'idun/src/main/protobuf'
+        }
+    }
+    processor {
+        java {
+            srcDir 'idun/src/main/processor'
+        }
+    }
+}
+
 dependencies {
-    annotationProcessor wpi.java.deps.wpilibAnnotations()
+    // Add basic Java dependencies, vendordeps not included by default
     implementation wpi.java.deps.wpilib()
-    implementation wpi.java.vendor.java()
+    implementation "edu.wpi.first.wpilibNewCommands:wpilibNewCommands-java:${wpilibVersion}"
+    implementation "org.littletonrobotics.akit:akit-java:${akitVersion}"
+    implementation 'com.google.protobuf:protobuf-java:3.21.12'
+    implementation 'net.java.dev.jna:jna:5.13.0'
+    implementation 'org.tukaani:xz:1.11'
 
-    roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
-    roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
-
-    roborioRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.roborio)
-    roborioRelease wpi.java.vendor.jniRelease(wpi.platforms.roborio)
-
-    nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
-    nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
-    simulationDebug wpi.sim.enableDebug()
-
+    // Add JNI dependencies
+    macMiniRelease wpi.java.deps.wpilibJniRelease('osxuniversal')
+    macMiniRelease "org.littletonrobotics.akit:akit-wpilibio:${akitVersion}:osxuniversal@zip"
     nativeRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
-    nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+    nativeRelease "org.littletonrobotics.akit:akit-wpilibio:${akitVersion}:${wpi.platforms.desktop}@zip"
     simulationRelease wpi.sim.enableRelease()
 
+    // Add dependencies for annotation processor source
+    processorImplementation 'com.squareup:javapoet:1.13.0'
+    processorImplementation 'com.google.auto.service:auto-service-annotations:1.1.0'
+    processorAnnotationProcessor 'com.google.auto.service:auto-service:1.1.0'
+
+    // Add annotation processors for main source
+    annotationProcessor wpi.java.deps.wpilibAnnotations()
+    annotationProcessor "org.littletonrobotics.akit:akit-autolog:${akitVersion}"
+    annotationProcessor sourceSets.processor.output
+
+    // Add unit testing framework
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
-    annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
 }
 
 test {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
-
-// Simulation configuration (e.g. environment variables).
-//
-// The sim GUI is *disabled* by default to support running
-// AdvantageKit log replay from the command line. Set the
-// value to "true" to enable the sim GUI by default (this
-// is the standard WPILib behavior).
-wpi.sim.addGui().defaultEnabled = false
-wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
 // in order to make them all available at runtime. Also adding the manifest so WPILib
@@ -119,49 +199,109 @@ jar {
         }
     }
     from sourceSets.main.allSource
-    manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
+    manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest('org.littletonrobotics.frc2026.Main')
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 // Configure jar and deploy tasks
-deployArtifact.jarTask = jar
+deploy.targets.macmini.artifacts.macMiniJava.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
 
-// Configure string concat to always inline compile
+// Set Java compilation options
 tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'
+    options.encoding = 'UTF-8'
 }
 
+// WPILib C++ configuration
+model {
+    components {
+        frcUserProgram(NativeExecutableSpec) {
+            targetPlatform wpi.platforms.roborio
+
+            // Enable for desktop simulation of roboRIO project
+            // targetPlatform wpi.platforms.desktop
+
+            sources.cpp {
+                source {
+                    srcDirs 'src/main/cpp', 'idun/src/main/cpp'
+                    srcDir 'build/generated/sources/proto/main/cpp'
+                    srcDir 'build/generated/sources/headers/java/main'
+                    include '**/*.cpp', '**/*.cc'
+                }
+                exportedHeaders {
+                    srcDirs 'src/main/include', 'idun/src/main/include'
+                    srcDir 'build/generated/sources/proto/main/cpp'
+                    srcDir 'build/generated/sources/headers/java/main'
+                    include '**/*.h'
+                }
+            }
+
+            // Set deploy task to deploy this component
+            deploy.targets.roborio.artifacts.frcCpp.component = it
+
+            // Enable run tasks for this component
+            wpi.cpp.enableExternalTasks(it)
+
+            // Enable simulation for this component
+            wpi.sim.enable(it)
+
+            // Defining dependencies. In this case, WPILib (+ friends), and vendor libraries.
+            wpi.cpp.vendor.cpp(it)
+            wpi.cpp.deps.wpilib(it)
+        }
+    }
+}
+
+tasks.withType(CppCompile) {
+    dependsOn tasks.named('generateProto')
+
+    // Some C++ sources are generated by the Java annotation processor
+    dependsOn tasks.named('compileJava')
+}
+
+// Set to true to use debug for C++ simulation
+wpi.cpp.debugSimulation = false
+
+// Simulation configuration (e.g. environment variables).
+//
+// The sim GUI is *disabled* by default to support running
+// AdvantageKit log replay from the command line. Set the
+// value to 'true' to enable the sim GUI by default (this
+// is the standard WPILib behavior).
+wpi.sim.addGui().defaultEnabled = false
+wpi.sim.addDriverstation()
+
 // Check robot type when deploying
-task(checkConstantsDeploy, dependsOn: "classes", type: JavaExec) {
-    main = "org.littletonrobotics.frc2026.Constants\$CheckDeploy"
+task(checkConstantsDeploy, dependsOn: 'classes', type: JavaExec) {
+    mainClass = 'org.littletonrobotics.frc2026.Constants$CheckDeploy'
     classpath = sourceSets.main.runtimeClasspath
 }
 deployroborio.dependsOn(checkConstantsDeploy)
 
 // Check constants for pull request
-task(checkConstantsPullRequest, dependsOn: "classes", type: JavaExec) {
-    main = "org.littletonrobotics.frc2026.Constants\$CheckPullRequest"
+task(checkConstantsPullRequest, dependsOn: 'classes', type: JavaExec) {
+    mainClass = 'org.littletonrobotics.frc2026.Constants$CheckPullRequest'
     classpath = sourceSets.main.runtimeClasspath
 }
 
 // Create version file
 project.compileJava.dependsOn(createVersionFile)
 gversion {
-    srcDir       = "src/main/java/"
-    classPackage = "org.littletonrobotics.frc2026"
-    className    = "BuildConstants"
-    dateFormat   = "yyyy-MM-dd HH:mm:ss z"
-    timeZone     = "America/New_York"
-    indent       = "  "
+    srcDir       = 'src/main/java/'
+    classPackage = 'org.littletonrobotics.frc2026'
+    className    = 'BuildConstants'
+    dateFormat   = 'yyyy-MM-dd HH:mm:ss z'
+    timeZone     = 'America/New_York'
+    indent       = '  '
 }
 
 // Create commit with working changes on event branches
 task(eventDeploy) {
     doLast {
-        if (project.gradle.startParameter.taskNames.any({ it.toLowerCase().contains("deploy") })) {
-            def branchPrefix = "event"
+        if (project.gradle.startParameter.taskNames.any({ it.toLowerCase().contains('deploy') })) {
+            def branchPrefix = 'event'
             def branch = 'git branch --show-current'.execute().text.trim()
             def commitMessage = "Update at '${new Date().toString()}'"
 
@@ -178,13 +318,13 @@ task(eventDeploy) {
                     ignoreExitValue = true
                 }
 
-                println "Committed to branch: '$branch'"
-                println "Commit message: '$commitMessage'"
+                println "Committed to branch: '${branch}'"
+                println "Commit message: '${commitMessage}'"
             } else {
-                println "Not on an event branch, skipping commit"
+                println 'Not on an event branch, skipping commit'
             }
         } else {
-            println "Not running deploy task, skipping commit"
+            println 'Not running deploy task, skipping commit'
         }
     }
 }
@@ -194,21 +334,32 @@ createVersionFile.dependsOn(eventDeploy)
 project.compileJava.dependsOn(spotlessApply)
 spotless {
     java {
-        target fileTree(".") {
-            include "src/**/*.java"
-            exclude "**/build/**", "**/build-*/**", "src/main/java/org/littletonrobotics/frc2026/BuildConstants.java", "northstar/**"
+        target fileTree('.') {
+            include '**/*.java'
+            exclude '**/build/**', '**/build-*/**', 'src/main/java/org/littletonrobotics/frc2026/BuildConstants.java', 'northstar/**'
         }
         toggleOffOn()
         googleJavaFormat()
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
-        licenseHeader("// Copyright (c) 2025-2026 Littleton Robotics\n// http://github.com/Mechanical-Advantage\n//\n// Use of this source code is governed by an MIT-style\n// license that can be found in the LICENSE file at\n// the root directory of this project.\n\n")
+        licenseHeader('// Copyright (c) 2025-2026 Littleton Robotics\n// http://github.com/Mechanical-Advantage\n//\n// Use of this source code is governed by an MIT-style\n// license that can be found in the LICENSE file at\n// the root directory of this project.\n\n')
+    }
+    cpp {
+        target fileTree('.') {
+            include '**/*.cpp', '**/*.cc', '**/*.h'
+            exclude '**/build/**', '**/build-*/**', 'northstar/**', '**/*.pb.cc', '**/*.pb.h'
+        }
+        toggleOffOn()
+        clangFormat('21.1.0').style('Google').pathToExe(System.getProperty('os.name').toLowerCase().contains('windows') ? '.clang-format/run.bat' : '.clang-format/run.sh')
+        trimTrailingWhitespace()
+        endWithNewline()
+        licenseHeader('// Copyright (c) 2025-2026 Littleton Robotics\n// http://github.com/Mechanical-Advantage\n//\n// Use of this source code is governed by an MIT-style\n// license that can be found in the LICENSE file at\n// the root directory of this project.\n\n')
     }
     groovyGradle {
-        target fileTree(".") {
-            include "**/*.gradle"
-            exclude "**/build/**", "**/build-*/**", "northstar/**"
+        target fileTree('.') {
+            include '**/*.gradle'
+            exclude '**/build/**', '**/build-*/**', 'northstar/**'
         }
         greclipse()
         indentWithSpaces(4)
@@ -216,16 +367,16 @@ spotless {
         endWithNewline()
     }
     json {
-        target fileTree(".") {
-            include "**/*.json"
-            exclude "**/build/**", "**/build-*/**", ".wpilib/**", "northstar/**"
+        target fileTree('.') {
+            include '**/*.json'
+            exclude '**/build/**', '**/build-*/**', '.wpilib/**', 'northstar/**'
         }
         gson().indentWithSpaces(2)
     }
-    format "misc", {
-        target fileTree(".") {
-            include "**/*.md", "**/.gitignore"
-            exclude "**/build/**", "**/build-*/**", "northstar/**"
+    format 'misc', {
+        target fileTree('.') {
+            include '**/*.md', '**/*.sh', '**/.gitignore'
+            exclude '**/build/**', '**/build-*/**', 'northstar/**'
         }
         trimTrailingWhitespace()
         indentWithSpaces(2)
