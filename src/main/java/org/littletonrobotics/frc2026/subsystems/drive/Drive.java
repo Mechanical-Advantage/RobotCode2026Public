@@ -28,6 +28,7 @@ import org.littletonrobotics.frc2026.RobotState.OdometryObservation;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
+import org.littletonrobotics.idun.IdunServer;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -127,6 +128,8 @@ public class Drive extends FullSubsystem {
                       backupGyroInputs.connected ? backupGyroInputs.yawPosition : null)));
     }
     RobotState.getInstance().setRobotVelocity(getChassisSpeeds());
+    // Update gyro offset for Idun
+    IdunServer.setGyroOffset(RobotState.getInstance().getRotation().minus(gyroInputs.yawPosition));
 
     // Update gyro alerts
     gyroDisconnectedAlert.set(

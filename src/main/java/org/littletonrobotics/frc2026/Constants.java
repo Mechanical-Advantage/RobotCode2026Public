@@ -7,25 +7,26 @@
 
 package org.littletonrobotics.frc2026;
 
-import edu.wpi.first.wpilibj.RobotBase;
+import org.littletonrobotics.idun.IdunConstants;
+import org.littletonrobotics.idun.IdunPlatform;
 
+@IdunConstants
 public final class Constants {
   private static final RobotType robot = RobotType.DARWIN;
   public static final boolean tuningMode = false;
 
-  // https://www.chiefdelphi.com/t/frc-6328-mechanical-advantage-2026-build-thread/509595/616
-  public static final double loopPeriodSecs = 0.02;
-  public static final double loopPeriodWatchdogSecs = 0.2;
+  public static final double loopPeriodSecs = 0.005;
+  public static final double loopPeriodWatchdogSecs = 0.1;
 
   public static Mode getMode() {
     return switch (getRobot()) {
-      case DARWIN, ALPHABOT -> RobotBase.isReal() ? Mode.REAL : Mode.REPLAY;
+      case DARWIN, ALPHABOT -> IdunPlatform.isRobot ? Mode.REAL : Mode.REPLAY;
       case SIMBOT -> Mode.SIM;
     };
   }
 
   public static RobotType getRobot() {
-    boolean isDesktop = Constants.disableHAL || RobotBase.isSimulation();
+    boolean isDesktop = Constants.disableHAL || IdunPlatform.isDesktop;
     return isDesktop && System.getenv("SIMBOT") != null ? RobotType.SIMBOT : robot;
   }
 

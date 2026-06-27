@@ -1,0 +1,13 @@
+{
+  "device_id": "northstar_1",
+  "server_ip": "127.0.0.1",
+  "apriltags_stream_port": 8002,
+  "objdetect_stream_port": 8003,
+  "capture_impl": "pylon-color-flipped",
+  "apriltag_max_fps": -1,
+  "obj_detect_model": "fuel_v1_batch1.mlpackage",
+  "obj_detect_max_fps": -1,
+  "apriltags_enable": true,
+  "objdetect_enable": true,
+  "video_folder": "/Users/frc6328/northstar_videos/"
+}

@@ -8,8 +8,10 @@
 package org.littletonrobotics.frc2026.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface GyroIO {
   @AutoLog
   public static class GyroIOInputs {

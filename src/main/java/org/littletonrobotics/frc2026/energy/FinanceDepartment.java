@@ -17,6 +17,9 @@ import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2026.Constants;
 import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
+import org.littletonrobotics.frc2026.util.darwin.DarwinPowerMonitor;
+import org.littletonrobotics.idun.IdunPlatform;
+import org.littletonrobotics.idun.IdunServer;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
@@ -81,7 +84,8 @@ public class FinanceDepartment extends FullSubsystem {
   public void periodic() {
     inputs.batteryVoltage = RobotController.getBatteryVoltage();
     inputs.rioCurrent = RobotController.getInputCurrent();
-    inputs.brownedOut = RobotController.isBrownedOut();
+    inputs.brownedOut = IdunServer.isRoboRioBrownedOut();
+    inputs.macMiniCurrent = IdunPlatform.isRobot ? DarwinPowerMonitor.getCurrentPowerWatts() : 0.0;
     Logger.processInputs("EnergyLogger", inputs);
     energyLogger.setBatteryVoltage(inputs.batteryVoltage);
     energyLogger.setRioCurrent(inputs.rioCurrent);

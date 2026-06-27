@@ -7,8 +7,10 @@
 
 package org.littletonrobotics.frc2026.subsystems.sensors;
 
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface FuelSensorIO {
   @AutoLog
   public static class FuelSensorIOInputs {

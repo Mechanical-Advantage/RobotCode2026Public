@@ -7,8 +7,10 @@
 
 package org.littletonrobotics.frc2026.subsystems.rollers;
 
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface RollerSystemIO {
   @AutoLog
   public static class RollerSystemIOInputs {

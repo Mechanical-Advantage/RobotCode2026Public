@@ -15,6 +15,8 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -24,6 +26,8 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -38,15 +42,24 @@ import org.littletonrobotics.frc2026.util.FullSubsystem;
 import org.littletonrobotics.frc2026.util.HubShiftUtil;
 import org.littletonrobotics.frc2026.util.LoggedTracer;
 import org.littletonrobotics.frc2026.util.VirtualSubsystem;
+import org.littletonrobotics.frc2026.util.darwin.DarwinPowerMode;
+import org.littletonrobotics.frc2026.util.darwin.DarwinPowerMode.PowerMode;
+import org.littletonrobotics.frc2026.util.darwin.MachThreading;
+import org.littletonrobotics.frc2026.util.logging.NoFMSNT4Publisher;
+import org.littletonrobotics.frc2026.util.logging.WPILOGXZReader;
+import org.littletonrobotics.frc2026.util.logging.WPILOGXZWriter;
+import org.littletonrobotics.idun.IdunPlatform;
+import org.littletonrobotics.idun.IdunRobot;
+import org.littletonrobotics.idun.IdunServer;
 import org.littletonrobotics.junction.AutoLogOutputManager;
 import org.littletonrobotics.junction.LogFileUtil;
-import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-public class Robot extends LoggedRobot {
+public class Robot extends IdunRobot {
   private Command autonomousCommand;
   private Command[] disruptorCommands;
   private double autoStart;
@@ -55,6 +68,11 @@ public class Robot extends LoggedRobot {
 
   private final Timer fuelLoggingTimer = new Timer();
   private static final Timer disabledTimer = new Timer();
+
+  private final Alert idunDisconnectedAlert =
+      new Alert("No connection to roboRIO 💔", AlertType.kError);
+  private LoggedNetworkBoolean restartCodeButton =
+      new LoggedNetworkBoolean("SmartDashboard/Restart Code");
 
   public Robot() {
     super(Constants.loopPeriodSecs);
@@ -89,8 +107,8 @@ public class Robot extends LoggedRobot {
     // Set up data receivers & replay source
     switch (Constants.getMode()) {
       case REAL:
-        Logger.addDataReceiver(new WPILOGWriter());
-        Logger.addDataReceiver(new NT4Publisher());
+        Logger.addDataReceiver(new WPILOGXZWriter());
+        Logger.addDataReceiver(new NoFMSNT4Publisher());
         break;
 
       case SIM:
@@ -102,16 +120,30 @@ public class Robot extends LoggedRobot {
         // Replaying a log, set up replay source
         String inPath = LogFileUtil.findReplayLog();
         String outPath = LogFileUtil.addPathSuffix(inPath, "_sim");
-        Logger.setReplaySource(new WPILOGReader(inPath));
+        Logger.setReplaySource(
+            inPath.endsWith(".wpilogxz") ? new WPILOGXZReader(inPath) : new WPILOGReader(inPath));
+        if (outPath.endsWith(".wpilogxz")) {
+          outPath = outPath.substring(0, outPath.length() - 2);
+        }
         Logger.addDataReceiver(new WPILOGWriter(outPath));
         break;
     }
 
     // Set timing mode
-    setUseTiming(Constants.getMode() != Mode.REPLAY);
+    setTimingMode(
+        switch (Constants.getMode()) {
+          case REAL -> TimingMode.SYNC;
+          case SIM -> TimingMode.FIXED;
+          case REPLAY -> TimingMode.FAST;
+        });
 
     // Start AdvantageKit logger
     Logger.start();
+
+    // Start Idun server
+    if (Constants.getMode() == Mode.REAL) {
+      IdunServer.start();
+    }
 
     // Adjust loop overrun warning timeout
     try {
@@ -175,6 +207,26 @@ public class Robot extends LoggedRobot {
       DriverStationSim.notifyNewData();
     }
 
+    // Set up restart code button
+    restartCodeButton.set(false);
+    new Trigger(restartCodeButton)
+        .onTrue(
+            Commands.runOnce(
+                    () -> {
+                      System.out.println("********** Robot program restarting **********");
+                      IdunServer.requestClientCodeRestart();
+                      Logger.recordOutput("RestartFlag", true);
+                    })
+                .andThen(
+                    // Wait for client to receive message (and ensure button is fully reset)
+                    Commands.run(() -> restartCodeButton.set(false)).withTimeout(0.2),
+                    Commands.runOnce(
+                        () -> {
+                          Logger.end();
+                          System.exit(0);
+                        }))
+                .ignoringDisable(true));
+
     // Reset disabled timer
     disabledTimer.restart();
 
@@ -186,11 +238,17 @@ public class Robot extends LoggedRobot {
 
     // Instantiate RobotContainer
     robotContainer = new RobotContainer();
+
+    // Configure scheduling priority on Mac mini
+    if (IdunPlatform.isRobot) {
+      MachThreading.setTimeConstraintPolicy(5, 5, 5);
+    }
   }
 
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
+    if (Constants.getMode() == Mode.REAL) IdunServer.processIncoming();
 
     // Reset logged tracer
     LoggedTracer.reset();
@@ -215,6 +273,30 @@ public class Robot extends LoggedRobot {
 
     // Process throttle state
     Logger.recordOutput("Throttled", shouldThrottle());
+    if (IdunPlatform.isRobot) {
+      DarwinPowerMode.set(shouldThrottle() ? PowerMode.LOW_POWER : PowerMode.AUTOMATIC);
+    }
+
+    // Clear old fuel
+    ObjectDetection.getInstance().clearOldFuelPoses();
+    LoggedTracer.record("ObjectDetection/ClearOldFuelPoses");
+
+    // Print auto duration
+    if (autonomousCommand != null) {
+      if (!autonomousCommand.isScheduled() && !autoMessagePrinted) {
+        if (DriverStation.isAutonomousEnabled()) {
+          System.out.printf(
+              "*** Auto finished in %.2f secs ***%n", Timer.getTimestamp() - autoStart);
+        } else {
+          System.out.printf(
+              "*** Auto cancelled in %.2f secs ***%n", Timer.getTimestamp() - autoStart);
+        }
+        autoMessagePrinted = true;
+      }
+    }
+
+    // Update Idun alert
+    idunDisconnectedAlert.set(IdunPlatform.isRobot && !IdunServer.isConnected());
 
     // Update RobotContainer dashboard outputs
     robotContainer.updateDashboardOutputs();
@@ -272,6 +354,8 @@ public class Robot extends LoggedRobot {
 
     // Record cycle time
     LoggedTracer.record("Robot/Periodic");
+
+    if (Constants.getMode() == Mode.REAL) IdunServer.processOutputs();
   }
 
   /** Returns whether performance should be throttled to conserve power. */
@@ -281,7 +365,7 @@ public class Robot extends LoggedRobot {
 
   /** Whether to display alerts related to hardware faults. */
   public static boolean showHardwareAlerts() {
-    return Constants.getMode() != Mode.SIM && Timer.getTimestamp() > 30.0;
+    return Constants.getMode() != Mode.SIM && IdunServer.isConnected();
   }
 
   /** This function is called once when the robot is disabled. */

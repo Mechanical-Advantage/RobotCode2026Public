@@ -17,7 +17,6 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -49,7 +48,9 @@ import org.littletonrobotics.frc2026.salesman.SalesmanSolverIO;
 import org.littletonrobotics.frc2026.subsystems.drive.Drive;
 import org.littletonrobotics.frc2026.subsystems.drive.DriveConstants;
 import org.littletonrobotics.frc2026.subsystems.drive.GyroIO;
+import org.littletonrobotics.frc2026.subsystems.drive.GyroIOIdun;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIO;
+import org.littletonrobotics.frc2026.subsystems.drive.ModuleIOIdun;
 import org.littletonrobotics.frc2026.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2026.subsystems.hopper.Hopper;
 import org.littletonrobotics.frc2026.subsystems.hubcounter.HubCounter;
@@ -57,20 +58,26 @@ import org.littletonrobotics.frc2026.subsystems.kicker.Kicker;
 import org.littletonrobotics.frc2026.subsystems.launcher.LaunchCalculator;
 import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.Flywheel;
 import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.flywheel.FlywheelIOIdun;
 import org.littletonrobotics.frc2026.subsystems.launcher.hood.Hood;
 import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIO;
+import org.littletonrobotics.frc2026.subsystems.launcher.hood.HoodIOIdun;
 import org.littletonrobotics.frc2026.subsystems.leds.Leds;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIO;
 import org.littletonrobotics.frc2026.subsystems.leds.LedsIOHAL;
+import org.littletonrobotics.frc2026.subsystems.leds.LedsIOIdun;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIO;
+import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIOIdun;
 import org.littletonrobotics.frc2026.subsystems.rollers.RollerSystemIOSim;
 import org.littletonrobotics.frc2026.subsystems.slamtake.SlamIO;
+import org.littletonrobotics.frc2026.subsystems.slamtake.SlamIOIdun;
 import org.littletonrobotics.frc2026.subsystems.slamtake.SlamIOSim;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.IntakeGoal;
 import org.littletonrobotics.frc2026.subsystems.slamtake.Slamtake.SlamGoal;
 import org.littletonrobotics.frc2026.subsystems.vision.Vision;
 import org.littletonrobotics.frc2026.subsystems.vision.VisionIO;
+import org.littletonrobotics.frc2026.subsystems.vision.VisionIONorthstar;
 import org.littletonrobotics.frc2026.util.BeachedUtil;
 import org.littletonrobotics.frc2026.util.ContinuousConditionalCommand;
 import org.littletonrobotics.frc2026.util.FuelSim;
@@ -80,6 +87,7 @@ import org.littletonrobotics.frc2026.util.controllers.OverrideSwitches;
 import org.littletonrobotics.frc2026.util.controllers.RazerWolverineController;
 import org.littletonrobotics.frc2026.util.controllers.TriggerUtil;
 import org.littletonrobotics.frc2026.util.geometry.AllianceFlipUtil;
+import org.littletonrobotics.idun.IdunPlatform;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
@@ -161,14 +169,61 @@ public class RobotContainer {
 
     // Instantiate subsystems
     if (Constants.getMode() != Constants.Mode.REPLAY) {
-      // https://www.chiefdelphi.com/t/frc-6328-mechanical-advantage-2026-build-thread/509595/616
       switch (Constants.getRobot()) {
         case DARWIN:
-          // Not implemented
+          drive =
+              new Drive(
+                  new GyroIOIdun("Gyro"),
+                  new GyroIOIdun("BackupGyro"),
+                  new ModuleIOIdun("Module0"),
+                  new ModuleIOIdun("Module1"),
+                  new ModuleIOIdun("Module2"),
+                  new ModuleIOIdun("Module3"));
+          slamtake = new Slamtake(new SlamIOIdun(), new RollerSystemIOIdun("IntakeRoller"));
+          hopper = new Hopper(new RollerSystemIOIdun("HopperRoller"), Optional.empty());
+          kicker =
+              new Kicker(
+                  new RollerSystemIOIdun("KickerRollerFront"),
+                  new RollerSystemIOIdun("KickerRollerBack"),
+                  Optional.empty());
+          hood = new Hood(new HoodIOIdun());
+          flywheel = new Flywheel(new FlywheelIOIdun("Flywheel"));
+          vision =
+              new Vision(
+                  this::getSelectedAprilTagLayout,
+                  new VisionIONorthstar(this::getSelectedAprilTagLayout, 0),
+                  new VisionIONorthstar(this::getSelectedAprilTagLayout, 1),
+                  new VisionIONorthstar(this::getSelectedAprilTagLayout, 2),
+                  new VisionIONorthstar(this::getSelectedAprilTagLayout, 3));
+          leds = new Leds(new LedsIOIdun());
+          salesmanSolver = new SalesmanSolver(new SalesAssociate());
           break;
 
         case ALPHABOT:
-          // Not implemented
+          drive =
+              new Drive(
+                  new GyroIOIdun(),
+                  new GyroIOIdun(),
+                  new ModuleIOIdun("Module0"),
+                  new ModuleIOIdun("Module1"),
+                  new ModuleIOIdun("Module2"),
+                  new ModuleIOIdun("Module3"));
+          slamtake = new Slamtake(new SlamIOIdun("Slam"), new RollerSystemIOIdun("IntakeRoller"));
+          hopper = new Hopper(new RollerSystemIOIdun("HopperRoller"), Optional.empty());
+          kicker =
+              new Kicker(
+                  new RollerSystemIOIdun("KickerRollerFront"),
+                  new RollerSystemIOIdun("KickerRollerBack"),
+                  Optional.empty());
+          hood = new Hood(new HoodIOIdun());
+          flywheel = new Flywheel(new FlywheelIOIdun("Flywheel"));
+          vision =
+              new Vision(
+                  this::getSelectedAprilTagLayout,
+                  new VisionIONorthstar(this::getSelectedAprilTagLayout, 0),
+                  new VisionIONorthstar(this::getSelectedAprilTagLayout, 1));
+          leds = new Leds(new LedsIOIdun());
+          salesmanSolver = new SalesmanSolver(new SalesAssociate());
           break;
 
         case SIMBOT:
@@ -250,7 +305,7 @@ public class RobotContainer {
     try {
       Method setChoreoDirMethod = Choreo.class.getDeclaredMethod("setChoreoDir", File.class);
       setChoreoDirMethod.setAccessible(true);
-      setChoreoDirMethod.invoke(null, new File(Filesystem.getDeployDirectory(), "vts"));
+      setChoreoDirMethod.invoke(null, new File(IdunPlatform.getDeployDirectory(), "vts"));
     } catch (Exception e) {
       DriverStation.reportWarning("Failed to set Choreo directory.", false);
     }
@@ -527,7 +582,7 @@ public class RobotContainer {
     AutoQuestion side =
         new AutoQuestion("Side?", List.of(AutoQuestionResponse.LEFT, AutoQuestionResponse.RIGHT));
 
-    File vtsFolder = new File(Filesystem.getDeployDirectory(), "vts");
+    File vtsFolder = new File(IdunPlatform.getDeployDirectory(), "vts");
     File[] tradeSecrets = vtsFolder.listFiles((dir, name) -> name.startsWith("manual_"));
 
     // Support choreo trajectories created on the choreo GUI (must start with "manual_")

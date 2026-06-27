@@ -36,8 +36,10 @@ import org.littletonrobotics.frc2026.subsystems.launcher.LauncherConstants;
 import org.littletonrobotics.frc2026.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2026.util.geometry.AllianceFlipUtil;
 import org.littletonrobotics.frc2026.util.geometry.GeomUtil;
+import org.littletonrobotics.idun.IdunConstants;
 import org.littletonrobotics.junction.Logger;
 
+@IdunConstants
 public class DriveCommands {
   public static final double deadband = 0.1;
   private static final double ffStartDelay = 2.0; // Secs

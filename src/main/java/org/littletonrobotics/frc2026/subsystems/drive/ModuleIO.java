@@ -9,8 +9,10 @@ package org.littletonrobotics.frc2026.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.frc2026.energy.CurrentLimits;
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {

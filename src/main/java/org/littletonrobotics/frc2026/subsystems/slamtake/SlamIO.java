@@ -7,8 +7,10 @@
 
 package org.littletonrobotics.frc2026.subsystems.slamtake;
 
+import org.littletonrobotics.idun.IdunIO;
 import org.littletonrobotics.junction.AutoLog;
 
+@IdunIO
 public interface SlamIO {
   @AutoLog
   public static class SlamIOInputs {

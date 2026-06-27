@@ -7,6 +7,9 @@
 
 package org.littletonrobotics.frc2026.subsystems.leds;
 
+import org.littletonrobotics.idun.IdunConstants;
+
+@IdunConstants
 public class LedConstants {
   public static final int length = 40;
   public static final int port = 0;

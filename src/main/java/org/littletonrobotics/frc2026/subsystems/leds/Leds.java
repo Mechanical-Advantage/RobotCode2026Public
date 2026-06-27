@@ -154,6 +154,7 @@ public class Leds extends VirtualSubsystem {
     try {
       outputs.buffer = (byte[]) bufferField.get(buffer);
 
+      outputs.ready = inputs.fpgaTime > 0.0;
     } catch (IllegalArgumentException | IllegalAccessException e) {
       e.printStackTrace();
     }

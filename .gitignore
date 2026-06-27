@@ -80,7 +80,7 @@ hs_err_pid*
 .AppleDouble
 .LSOverride
 
-# Icon must end with two \r
+# Icon must end with two 
 Icon
 
 # Thumbnails
@@ -184,3 +184,8 @@ compile_commands.json
 
 # Version file
 src/main/java/org/littletonrobotics/frc2026/BuildConstants.java
+
+# Generated paths
+src/main/deploy/vts/*.chor
+src/main/deploy/vts/*.traj
+!src/main/deploy/vts/manual_*.traj

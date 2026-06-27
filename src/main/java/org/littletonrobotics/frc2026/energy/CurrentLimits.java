@@ -7,6 +7,9 @@
 
 package org.littletonrobotics.frc2026.energy;
 
+import org.littletonrobotics.idun.IdunConstants;
+
+@IdunConstants
 public class CurrentLimits {
   public static final double driveMinLimitAmps = 5;
   public static final double driveMaxLimitAmps = 35;

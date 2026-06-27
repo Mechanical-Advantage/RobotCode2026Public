@@ -1,0 +1,191 @@
+{
+  "name": "Darwin",
+  "isFTC": false,
+  "position": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "z",
+      "degrees": 90
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Northstar 0",
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": -22.5
+        },
+        {
+          "axis": "z",
+          "degrees": 180
+        }
+      ],
+      "position": [
+        -0.323804,
+        0.0,
+        0.351340
+      ],
+      "resolution": [
+        1800,
+        1200
+      ],
+      "fov": 75.0
+    },
+    {
+      "name": "Northstar 1",
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": 12
+        },
+        {
+          "axis": "z",
+          "degrees": -5
+        }
+      ],
+      "position": [
+        0.2152904,
+        0.631571,
+        0.4829048
+      ],
+      "resolution": [
+        1280,
+        960
+      ],
+      "fov": 90.0
+    },
+    {
+      "name": "Northstar 2",
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": 12
+        },
+        {
+          "axis": "z",
+          "degrees": 70
+        }
+      ],
+      "position": [
+        -0.170833,
+        0.316631,
+        0.435463
+      ],
+      "resolution": [
+        1280,
+        960
+      ],
+      "fov": 90.0
+    },
+    {
+      "name": "Northstar 3",
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": 12
+        },
+        {
+          "axis": "z",
+          "degrees": -70
+        }
+      ],
+      "position": [
+        -0.158133,
+        -0.316631,
+        0.435463
+      ],
+      "resolution": [
+        1280,
+        960
+      ],
+      "fov": 90.0
+    }
+  ],
+  "components": [
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        },
+        {
+          "axis": "y",
+          "degrees": 10
+        }
+      ],
+      "zeroedPosition": [
+        0.175,
+        0,
+        -0.525
+      ]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        },
+        {
+          "axis": "y",
+          "degrees": 147.5
+        }
+      ],
+      "zeroedPosition": [
+        0.167,
+        0,
+        0.327
+      ]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [
+        -0.35,
+        0,
+        -0.37
+      ]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [
+        -0.01,
+        0,
+        -0.555
+      ]
+    }
+  ]
+}
