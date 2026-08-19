@@ -112,6 +112,7 @@ public class Vision extends VirtualSubsystem {
 
     // Update disconnected alerts & LEDs
     boolean anyNTDisconnected = false;
+    boolean backDisconnected = false;
     for (int i = 0; i < io.length; i++) {
       if (aprilTagInputs[i].timestamps.length > 0 || objDetectInputs[i].timestamps.length > 0) {
         disconnectedTimers[i].reset();
@@ -126,6 +127,9 @@ public class Vision extends VirtualSubsystem {
       }
       disconnectedAlerts[i].set(disconnected);
       anyNTDisconnected = anyNTDisconnected || !inputs[i].ntConnected;
+      if (i == 0) {
+        backDisconnected = disconnected;
+      }
     }
 
     // Loop over instances
@@ -251,10 +255,12 @@ public class Vision extends VirtualSubsystem {
                     / Math.pow(tagPoses.size(), 2.0)
                     * cameras[instanceIndex].stdDevFactor()
                 : Double.POSITIVE_INFINITY;
-        allVisionObservations.add(
-            new VisionObservation(
-                timestamp, robotPose, VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)));
-        allRobotPoses.add(robotPose);
+        if (instanceIndex != 1 || backDisconnected) {
+          allVisionObservations.add(
+              new VisionObservation(
+                  timestamp, robotPose, VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)));
+          allRobotPoses.add(robotPose);
+        }
 
         // Log data from instance
         Logger.recordOutput(
