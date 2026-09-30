@@ -36,7 +36,6 @@ class Robot : public frc::TimedRobot {
  private:
   // Subsystems
   GyroIO* gyro;
-  GyroIO* backupGyro;
   ModuleIO* module0;
   ModuleIO* module1;
   ModuleIO* module2;

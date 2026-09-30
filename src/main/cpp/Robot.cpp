@@ -67,8 +67,6 @@ Robot::Robot()
     case RobotType::DARWIN:
       gyro = new GyroIOPigeon2("Gyro", DriveConstants::darwinCanBus,
                                DriveConstants::darwinGyroId);
-      backupGyro = new GyroIOPigeon2("BackupGyro", DriveConstants::darwinCanBus,
-                                     DriveConstants::darwinBackupGyroId);
       module0 = new ModuleIOTalonFX("Module0", DriveConstants::darwinCanBus,
                                     DriveConstants::darwinDriveMotorIdFL,
                                     DriveConstants::darwinTurnMotorIdFL,

@@ -60,7 +60,6 @@ public class RobotState {
       };
 
   private Optional<Rotation2d> lastTheta = Optional.empty();
-  private Optional<Rotation2d> lastFallbackTheta = Optional.empty();
 
   @Getter @Setter private ChassisSpeeds robotVelocity = new ChassisSpeeds();
   @Getter @Setter private ChassisSpeeds robotSetpointVelocity = new ChassisSpeeds();
@@ -133,8 +132,7 @@ public class RobotState {
   public void addOdometryObservation(OdometryObservation observation) {
     // Logic to scale down odometry
     var t = 1.0;
-    if ((observation.pitch().isPresent() && observation.roll().isPresent())
-        || (observation.fallbackPitch().isPresent() && observation.fallbackRoll().isPresent())) {
+    if (observation.pitch().isPresent() && observation.roll().isPresent()) {
       t =
           1
               - (MathUtil.inverseInterpolate(
@@ -143,11 +141,8 @@ public class RobotState {
                   Math.abs(
                       Units.radiansToDegrees(
                           Math.acos(
-                              observation.pitch().isPresent()
-                                  ? observation.pitch().get().getCos()
-                                      * observation.roll().get().getCos()
-                                  : observation.fallbackPitch().get().getCos()
-                                      * observation.fallbackRoll().get().getCos())))));
+                              observation.pitch().get().getCos()
+                                  * observation.roll().get().getCos())))));
     }
     t = MathUtil.clamp(t, 0.0, 1.0);
 
@@ -160,11 +155,9 @@ public class RobotState {
     double dtheta = twist.dtheta;
     if (observation.yaw().isPresent() && lastTheta.isPresent()) {
       dtheta = observation.yaw().get().minus(lastTheta.get()).getRadians();
-    } else if (observation.fallbackYaw().isPresent() && lastFallbackTheta.isPresent()) {
-      dtheta = observation.fallbackYaw().get().minus(lastFallbackTheta.get()).getRadians();
     }
+
     lastTheta = observation.yaw();
-    lastFallbackTheta = observation.fallbackYaw();
     twist = new Twist2d(twist.dx, twist.dy, dtheta);
 
     // Apply twist to odometry and estimated poses
@@ -175,18 +168,13 @@ public class RobotState {
     poseBuffer.addSample(observation.timestamp(), odometryPose);
 
     // Add rotation to buffer at timestamp
-    if (observation.yaw().isPresent() || observation.fallbackYaw().isPresent()) {
+    if (observation.yaw().isPresent()) {
       rotationBuffer.addSample(
           observation.timestamp(),
-          observation.yaw().isPresent()
-              ? new Rotation3d(
-                  observation.roll.get().getRadians(),
-                  observation.pitch.get().getRadians(),
-                  observation.yaw.get().getRadians())
-              : new Rotation3d(
-                  observation.fallbackRoll.get().getRadians(),
-                  observation.fallbackPitch.get().getRadians(),
-                  observation.fallbackYaw.get().getRadians()));
+          new Rotation3d(
+              observation.roll.get().getRadians(),
+              observation.pitch.get().getRadians(),
+              observation.yaw.get().getRadians()));
     }
   }
 
@@ -289,10 +277,7 @@ public class RobotState {
       SwerveModulePosition[] wheelPositions,
       Optional<Rotation2d> roll,
       Optional<Rotation2d> pitch,
-      Optional<Rotation2d> yaw,
-      Optional<Rotation2d> fallbackRoll,
-      Optional<Rotation2d> fallbackPitch,
-      Optional<Rotation2d> fallbackYaw) {}
+      Optional<Rotation2d> yaw) {}
 
   public record VisionObservation(double timestamp, Pose3d visionPose, Matrix<N3, N1> stdDevs) {}
 

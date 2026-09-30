@@ -174,7 +174,6 @@ public class RobotContainer {
           drive =
               new Drive(
                   new GyroIOIdun("Gyro"),
-                  new GyroIOIdun("BackupGyro"),
                   new ModuleIOIdun("Module0"),
                   new ModuleIOIdun("Module1"),
                   new ModuleIOIdun("Module2"),
@@ -203,7 +202,6 @@ public class RobotContainer {
           drive =
               new Drive(
                   new GyroIOIdun(),
-                  new GyroIOIdun(),
                   new ModuleIOIdun("Module0"),
                   new ModuleIOIdun("Module1"),
                   new ModuleIOIdun("Module2"),
@@ -230,7 +228,6 @@ public class RobotContainer {
           drive =
               new Drive(
                   new GyroIO() {},
-                  new GyroIO() {},
                   new ModuleIOSim(0),
                   new ModuleIOSim(1),
                   new ModuleIOSim(2),
@@ -256,7 +253,6 @@ public class RobotContainer {
     if (drive == null) {
       drive =
           new Drive(
-              new GyroIO() {},
               new GyroIO() {},
               new ModuleIO() {},
               new ModuleIO() {},
