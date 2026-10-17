@@ -26,7 +26,7 @@ import org.littletonrobotics.junction.Logger;
 public class FinanceDepartment extends FullSubsystem {
   // MARK: - Constants
   private static final double minVoltageBrownout = 7.0;
-  private static final double maxBudgetAmps = 200.0;
+  private static final double maxBudgetAmps = 190.0;
   private static final double breakerNiceness = 0.05;
   private static final double budgetWarningThreshold = 180.0;
   // Allow ramping from other subsystems

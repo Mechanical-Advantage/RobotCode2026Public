@@ -117,7 +117,7 @@ public class VisionConstants {
                                       0.0,
                                       Units.degreesToRadians(
                                           12.0 + cameraPitchFudgeDegrees[1].get()),
-                                      Units.degreesToRadians(-5.0))));
+                                      Units.degreesToRadians(-10.0))));
                         } else {
                           return Optional.empty();
                         }
