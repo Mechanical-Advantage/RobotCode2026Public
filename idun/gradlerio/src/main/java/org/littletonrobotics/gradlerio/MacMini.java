@@ -71,7 +71,7 @@ public class MacMini extends WPIRemoteTarget {
             "ds",
             DSDeployLocation.class,
             ds -> {
-              ds.setUser("frc" + Integer.toString(getTeam()));
+              ds.setUser("frc6328");
               ds.setPassword("password");
               ds.setIpv6(false);
             });
@@ -85,7 +85,7 @@ public class MacMini extends WPIRemoteTarget {
             loc -> {
               loc.setAddress(address);
               loc.setIpv6(false);
-              loc.setUser("frc" + Integer.toString(getTeam()));
+              loc.setUser("frc6328");
               loc.setPassword("password");
             });
   }
